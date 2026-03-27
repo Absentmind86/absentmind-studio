@@ -17,12 +17,16 @@ AM Studio is not a wrapper around existing image generators. It is a custom-buil
 ### AM Pixel *(active development)*
 AI sprite generator and game asset manager for retro pixel art games.
 
-- Text-to-sprite generation with iterative approval
-- Character DNA system for perfect cross-sprite continuity
+- Text-to-sprite generation with iterative natural language approval
+- Character DNA system for pixel-perfect cross-sprite continuity
 - Full sprite sheet management (non-destructive extension)
 - Environment tileset generation with aesthetic proof workflow
+- Parallax battle background generation with layer system
+- Battle effect animation generation (Mode 6)
 - UI, font, and animated tile generation
-- GitHub project integration
+- **Freeform generation (Mode 7)** — any custom pixel art image, any resolution, no project constraints
+- Full local web UI — chat, preview, approve/reject, project tabs, freeform tab
+- GitHub project integration and asset versioning
 - Export for Godot, RPG Maker MZ, GameMaker, and generic JSON
 
 [→ Full Specification](am-pixel/SPEC.md)
@@ -30,9 +34,9 @@ AI sprite generator and game asset manager for retro pixel art games.
 
 ---
 
-### AM Audio *(planned)*
+### AM Audio *(planned — post AM Pixel v1)*
 AI chiptune composer and sound effects studio for retro game audio.
-Planned as a companion to AM Pixel under the AM Studio umbrella.
+Planned as a companion to AM Pixel under the AM Studio umbrella. Not in current scope — development begins after AM Pixel reaches production threshold.
 
 ---
 
@@ -70,7 +74,7 @@ absentmind-studio/
 
 ## Status
 
-AM Pixel is in pre-development definition phase. All architectural decisions have been made. OpenClaw execution begins from `am-pixel/OPENCLAW_PROMPT.md`.
+AM Pixel Bible is complete and gap-free (v1.1). All architectural decisions are locked. OpenClaw execution begins from `am-pixel/OPENCLAW_PROMPT.md`.
 
 ---
 
