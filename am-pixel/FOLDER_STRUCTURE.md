@@ -1,5 +1,5 @@
 # AM Pixel — Project Folder Structure
-**Absentmind Studio | Version 1.0**
+**Absentmind Studio | Version 1.1**
 
 OpenClaw initializes this exact structure in Phase 0. Every directory and file listed here must exist before Phase 1 begins. Placeholder files use `.gitkeep`.
 
@@ -104,10 +104,23 @@ am-pixel/
 │   │   ├── mode1_character.py         ← Character creation mode
 │   │   ├── mode2_extension.py         ← Sprite sheet extension mode
 │   │   ├── mode3_tileset.py           ← Environment and tileset generation mode
+│   │   ├── mode3b_parallax.py         ← Parallax background generation mode
 │   │   ├── mode4_ui.py                ← UI generation mode
-│   │   └── mode5_font.py              ← Font generation mode
+│   │   ├── mode5_font.py              ← Font generation mode
+│   │   ├── mode6_effects.py           ← Battle effect animation mode
+│   │   └── mode7_freeform.py          ← Freeform generation (no DNA, no style constraints, any resolution)
 │   ├── github_integration.py          ← GitHub repo read/write and DNA scan
 │   └── project_manager.py             ← Project state, tab organization, session management
+│
+├── ui/                                ← Full local web interface
+│   ├── app.py                         ← FastAPI entrypoint — serves both inference API and web UI
+│   ├── templates/                     ← HTML templates
+│   │   ├── index.html                 ← Main application shell
+│   │   ├── project_tabs.html          ← Project asset tab structure
+│   │   └── freeform.html              ← Freeform generation tab
+│   └── static/                        ← CSS and JS assets
+│       ├── main.css
+│       └── main.js
 │
 ├── projects/                          ← User game projects (one folder per project)
 │   └── .gitkeep
@@ -180,6 +193,9 @@ am-pixel/
 │   └── fonts/
 │       └── .gitkeep
 │
+├── freeform/                          ← Standalone freeform (Mode 7) outputs — not project assets
+│   └── .gitkeep
+│
 ├── practice/                          ← Practice Gauntlet output (not production)
 │   ├── characters/
 │   │   └── .gitkeep
@@ -243,4 +259,4 @@ BLOCKER: [short description] — awaiting human input
 
 ---
 
-*AM Pixel Folder Structure v1.0 | Absentmind Studio*
+*AM Pixel Folder Structure v1.1 | Absentmind Studio*

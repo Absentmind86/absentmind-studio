@@ -1,5 +1,5 @@
 # AM Pixel — OpenClaw Execution Prompt
-**Absentmind Studio | Version 1.0**
+**Absentmind Studio | Version 1.1**
 
 ---
 
@@ -38,12 +38,14 @@ Build AM Pixel as specified. The end product is:
 
 - A custom autoregressive transformer model that generates pixel art sprites natively in palette-index space
 - A character DNA system that enforces pixel-perfect visual continuity across all sprites for a character
-- A complete asset management pipeline: character creation, sheet extension, tileset generation, UI generation, font generation
+- A complete asset management pipeline: character creation (Mode 1), sheet extension (Mode 2), tileset and parallax generation (Mode 3/3b), UI generation (Mode 4), font generation (Mode 5), battle effect animations (Mode 6), and freeform unconstrained generation (Mode 7)
+- Mode 7 freeform: bypasses DNA, style bible, and SNES constraints entirely — any resolution, full 256-color palette, outputs standalone PNG only, never touches continuity manifest or project state
+- A full local web UI (FastAPI + HTML/JS, localhost only) with chat panel, 1×/4× sprite preview, approve/reject/adjust controls, project tabs, freeform tab, and continuity manifest viewer
 - A self-training system that continuously improves model quality through research, production experience, and quality-gated fine-tuning
-- An evaluation engine that scores every generated sprite against a rigorous rubric and cannot pass output below 95/100
+- An evaluation engine that selects the correct rubric (A: characters, B: tilesets, C: parallax) and cannot pass output below 95/100 for project modes
 - GitHub integration for project management and asset versioning
 - Export support for Godot, RPG Maker MZ, GameMaker, and generic JSON
-- A local inference server (FastAPI) that serves the model for development use
+- A local inference server (FastAPI) that serves the model and the web UI for development use
 - A server inference API layer ready for eventual production deployment
 
 The quality standard is work that a pixel art expert cannot reliably distinguish from professional SNES-era studio output. This is not aspirational. It is the shipping standard.
@@ -121,4 +123,4 @@ The product you are building does not exist anywhere in the world. You are build
 
 ---
 
-*AM Pixel OpenClaw Prompt v1.0 | Absentmind Studio*
+*AM Pixel OpenClaw Prompt v1.1 | Absentmind Studio*

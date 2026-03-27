@@ -1,11 +1,11 @@
 # AM Pixel — Full Technical Specification
-**Absentmind Studio | Version 1.0**
+**Absentmind Studio | Version 1.1**
 
 ---
 
 ## 1. Product Definition
 
-AM Pixel is a purpose-built AI sprite generator and game asset manager for retro-style pixel art games. It produces original, studio-quality pixel art assets through natural language conversation, with a character DNA system that enforces perfect visual continuity across all assets in a project.
+AM Pixel is a purpose-built AI sprite generator and game asset manager for retro-style pixel art games. It produces original, studio-quality pixel art assets through natural language conversation, with a character DNA system that enforces perfect visual continuity across all assets in a project. It also includes a freeform generation mode for arbitrary custom pixel art images not bound to any project DNA, style bible, or SNES constraints.
 
 AM Pixel is not a wrapper around Stable Diffusion, Midjourney, or any existing image generation model. It is a custom-built autoregressive transformer that generates sprites natively in palette-index space — the same way a language model generates tokens. This architecture is the core innovation that makes pixel-perfect DNA enforcement possible.
 
@@ -58,6 +58,8 @@ Diffusion-based models generate in RGB color space with probabilistic sampling. 
 **Conditioning inputs:**
 The model is conditioned on structured DNA specifications at generation time. DNA is not a hint — it collapses the valid token space. The model cannot generate a color that isn't in the character's palette because those token indices don't exist in the conditioned vocabulary.
 
+**For Mode 7 freeform generation:** Conditioning tokens are omitted entirely. The vocabulary expands to the full 256-color palette. The SNES style constraints and DNA enforcement are suspended. Freeform outputs are PNG only and are never added to the continuity manifest or DNA store.
+
 **Architecture specifics:**
 - Transformer decoder architecture (GPT-style)
 - Sequence length: sprite width × height (e.g., 384 for 16x24)
@@ -88,12 +90,14 @@ Curated high-quality subset. Only sprites that pass the evaluation rubric. Teach
 |-----------|----------------|
 | Training Engine | Self-directed research, corpus curation, model training, quality fine-tuning |
 | Generation Engine | Custom transformer inference — produces sprite candidates from DNA + prompt |
-| Evaluation Engine | Scores every candidate against rubric before human sees it. Cannot pass below 95. |
+| Freeform Engine | Unconstrained generation mode — bypasses DNA and style bible, uses full 256-color vocabulary, any resolution, outputs PNG only. See Mode 7. |
+| Evaluation Engine | Scores every candidate against the correct rubric (A/B/C) before human sees it. Cannot pass below 95 for project modes. |
 | DNA Store | Persistent database of every approved character's exact visual specification |
 | Approval Pipeline | Human-facing conversation layer — text input, candidate presentation, adjustment handling |
 | Project Registry | Master project state — palette, proportion system, animation standards, all assets |
 | Sheet Manager | Non-destructive sprite sheet management — reads/writes using layout manifests |
 | Export Engine | Converts approved assets to target engine formats |
+| Web UI | Full local web interface — chat, 1×/4× sprite preview, approve/reject controls, project tabs, freeform tab, continuity manifest viewer. See Section 14. |
 
 ---
 
@@ -169,6 +173,8 @@ DNA is not a description of what the character looks like. It is a technical blu
 The moment a character design is approved, the system presents:
 
 > *"This design is now the DNA source for ALL future sprites of this character across all profiles. Every animation, every scale variant, every future addition will be generated from this DNA. This cannot be changed without re-approving the base design and regenerating all derived sprites. Confirm lock?"*
+
+**DNA locking applies to Modes 1 through 6 only.** Mode 7 (Freeform) is explicitly non-DNA. Freeform outputs do not update the continuity manifest, the DNA store, or any project file. They are standalone PNG exports only.
 
 ### 4.4 DNA Extraction Process
 
@@ -361,7 +367,43 @@ Every effect belongs to one of these categories, each with defined conventions:
 
 ---
 
-## 6. Project Organization
+### 5.7 Mode 7 — Freeform Generation
+
+Freeform mode is the escape hatch from the entire DNA, style bible, and SNES constraint system. It exists for situations where a user needs a custom pixel art image that has nothing to do with their current project, or that falls outside any defined asset category.
+
+**When to use freeform:**
+- Custom images unrelated to any active game project
+- Concept art or mood pieces at non-standard resolutions
+- Assets for a game with a completely different aesthetic from the project style bible
+- Quick one-off generations for testing or inspiration
+
+**What freeform bypasses:**
+- DNA conditioning — no character DNA is loaded or referenced
+- MASTER_PALETTE.md — full 256-color vocabulary is available
+- SNES hardware constraints — any resolution is valid
+- Continuity manifest — freeform outputs are never logged as project assets
+- Strict evaluation rubric — the 95/100 gate does not apply; a lighter quality check runs to prevent obvious technical failures
+
+**What freeform does NOT bypass:**
+- The anti-pattern detector — pillow shading and banding are still flagged and corrected
+- The originality check — outputs still cannot be direct copies of reference material
+
+**Flow:**
+1. User invokes freeform from the dedicated freeform tab in the web UI
+2. User provides: text description + target resolution (e.g., "a cyberpunk robot, 64x64 pixels")
+3. System generates candidate with full 256-color palette, no DNA conditioning
+4. Candidate presented at 1x and 4x zoom
+5. User approves or requests adjustments — same natural language loop as project modes
+6. On approval: exported as standalone PNG to `assets/freeform/` — no DNA extracted, no manifest updated, no git commit to project state
+7. Freeform outputs are logged in `logs/freeform_log.md` for reference only
+
+**Implementation notes:**
+- `pipeline/modes/mode7_freeform.py` handles this mode
+- Freeform uses the same underlying transformer but without DNA conditioning tokens
+- Resolution is specified by user — system validates it is a reasonable pixel art size (max 256x256 recommended; larger sizes supported but quality warning issued)
+- Freeform outputs cannot be promoted to project assets without going through Mode 1 character creation to extract proper DNA
+
+---
 
 ### 6.1 Tab Structure
 
@@ -651,18 +693,63 @@ Additional style models unlock after hitting 99/100 production threshold in curr
 
 ---
 
-## 13. Technical Stack
+## 14. User-Facing Web Interface
+
+AM Pixel is operated through a local web UI served by FastAPI. This is not optional — it is a required deliverable. A solo developer cannot be expected to run Python scripts in a terminal to approve sprites. The web UI is the product's face.
+
+### 14.1 Requirements
+
+**Chat panel:**
+Natural language input for all generation requests. Supports all seven modes. Mode is auto-detected from context or selectable via tab. Conversation history maintained per session.
+
+**Sprite preview panel:**
+Every generated candidate displayed at both 1x (actual pixel size) and 4x (zoomed) simultaneously. For sprite sheets, individual frame playback at selectable speed. For parallax backgrounds, multi-layer scroll simulation at adjustable speed ratios.
+
+**Approval controls:**
+- Approve — locks the candidate, triggers DNA extraction if applicable, proceeds to next step
+- Reject — sends back to generation with optional adjustment note
+- Adjust — opens text input for natural language adjustment request without full rejection
+
+**Project tabs:**
+Mirror the project organization structure defined in Section 6.1. Each tab shows assets in that category as a visual grid. Clicking any asset opens its DNA record, sheet layout, and generation history.
+
+**Freeform tab:**
+Dedicated tab for Mode 7. Separate from project tabs. Resolution input field. No DNA or project state shown — clean blank canvas interface.
+
+**Continuity manifest viewer:**
+Read-only view of `CONTINUITY_MANIFEST.md` rendered as a visual table. Shows all characters, their palette assignments, continuity groups, and profile completion status.
+
+**Hardware status bar:**
+Persistent display of: GPU VRAM usage, current phase, training status, disk usage. Alerts if any resource approaches limits.
+
+### 14.2 Technical Implementation
+
+- **Server:** FastAPI serving both the inference API and the web UI
+- **Frontend:** Single-page HTML/JS application — no external framework dependencies required; keep it simple and functional
+- **Entry point:** `ui/app.py`
+- **Templates:** `ui/templates/` — HTML templates
+- **Static assets:** `ui/static/` — CSS and JS
+- **Local only:** Web UI serves on localhost only (127.0.0.1) — never exposed to external network in local mode
+- **Server mode:** In production deployment, UI is replaced by a proper client application calling the server-side inference API
+
+### 14.3 Build Priority
+
+The web UI skeleton (working chat panel + image preview + approve/reject controls) must be complete and functional before the Practice Gauntlet begins. OpenClaw cannot validate the approval workflow without a working UI to validate it through.
+
+---
+
+## 15. Technical Stack
 
 - **Model:** Custom PyTorch transformer, CUDA training
-- **Hardware:** NVIDIA GPU, minimum 10GB VRAM (CUDA required)
+- **Hardware:** NVIDIA GPU, minimum 10GB VRAM (CUDA required). If local GPU is insufficient for training, use cloud GPU rental (RunPod, Vast.ai, Lambda Labs) for training runs only — inference can run on lower VRAM.
 - **Image tooling:** Pillow for pixel-level manipulation and validation
 - **Sheet management:** Custom Python tools using layout manifests
 - **Project state:** JSON manifests + Markdown human-readable files
 - **Version control:** Git — every approval event is a commit
-- **API layer:** FastAPI (server inference endpoint)
-- **Client:** TBD (Electron desktop app or web client)
+- **API layer:** FastAPI (inference endpoint + web UI server)
+- **Web UI:** FastAPI + plain HTML/JS (localhost only in local mode)
 - **Training data management:** Custom curation pipeline with quality scoring
 
 ---
 
-*AM Pixel Specification v1.0 | Absentmind Studio*
+*AM Pixel Specification v1.1 | Absentmind Studio*

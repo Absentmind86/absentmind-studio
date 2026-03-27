@@ -1,5 +1,5 @@
 # AM Pixel — Genre Taxonomy
-**Absentmind Studio | Version 1.0**
+**Absentmind Studio | Version 1.1**
 
 ---
 
@@ -8,6 +8,8 @@
 This document defines the genre taxonomy for AM Pixel's progressive training roadmap. Genres are organized into tiers based on asset similarity and training complexity. The system progresses through tiers sequentially — advancing only after hitting the 99/100 production threshold in the current tier.
 
 The goal is not to eventually support every genre ever made. The goal is to achieve genuine mastery in a defined set of genres that share meaningful asset overlap. Scope discipline is what makes the tool exceptional rather than mediocre at everything.
+
+**Freeform generation (Mode 7) is genre-agnostic and always available.** It does not count toward any genre mastery threshold, does not affect the continuity manifest, and does not interact with the tiered training progression in any way. It is the escape hatch for one-off custom images that fall outside any defined genre or project scope. See SPEC.md §5.7 for full Mode 7 specification.
 
 ---
 
@@ -162,6 +164,8 @@ When a user declares their project context, they describe it naturally:
 
 The system maps this to a primary genre (1B) with secondary influences (1A) and applies the appropriate asset conventions. It does not need a separate model for every possible blend. The genre taxonomy defines the training targets. The project declaration defines how to apply them.
 
+For assets that fall completely outside any defined genre — abstract compositions, custom icons, concept art, or anything else that doesn't fit — use Mode 7 freeform generation. Freeform handles anything the genre system cannot.
+
 ---
 
 ## Genre Mastery Threshold
@@ -175,4 +179,4 @@ Each genre is considered mastered when:
 
 ---
 
-*AM Pixel Genre Taxonomy v1.0 | Absentmind Studio*
+*AM Pixel Genre Taxonomy v1.1 | Absentmind Studio*

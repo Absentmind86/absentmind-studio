@@ -1,5 +1,5 @@
 # AM Pixel — Execution Roadmap
-**Absentmind Studio | Version 1.0**
+**Absentmind Studio | Version 1.1**
 
 ---
 
@@ -40,6 +40,8 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Install all required Python dependencies — log versions
 - [ ] Verify disk space — minimum 100GB available for training data and model checkpoints
 - [ ] Build all required tooling scripts (palette_validator, dna_diff, rubric_scorer, sheet_manager, etc.)
+- [ ] Create `pipeline/modes/mode7_freeform.py` stub with documented interface
+- [ ] Initialize `ui/` directory — build working web UI skeleton: chat panel, 1×/4× image preview, approve/reject/adjust controls, project tabs, freeform tab. Must be functional before Phase 5.
 - [ ] Run tool validation tests — confirm each tool produces correct output on test inputs
 - [ ] Write initial commit: `"Phase 0 complete: environment initialized"`
 
@@ -47,6 +49,8 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] GPU confirmed with CUDA, VRAM logged
 - [ ] All tooling scripts pass validation tests
 - [ ] Full folder structure exists and is committed
+- [ ] `mode7_freeform.py` stub exists and is committed
+- [ ] Web UI skeleton is running on localhost — chat panel, preview, and approve/reject are functional (content not required yet, structure must work)
 - [ ] No Phase 0 tasks remain incomplete
 
 ---
@@ -206,6 +210,14 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Validate anti-pattern detection
   - Run evaluation engine against anti-pattern dataset
   - Engine must correctly identify 90%+ of documented failure modes
+- [ ] Run 5 freeform Mode 7 test generations
+  - Validate DNA/style constraints are correctly bypassed
+  - Confirm outputs land in `assets/freeform/` only
+  - Confirm continuity manifest is NOT updated by freeform outputs
+- [ ] Validate full web UI approval workflow end-to-end
+  - Generate a practice sprite → preview in web UI at 1x and 4x → approve via UI → confirm asset committed correctly
+  - Test reject + adjustment cycle through UI
+  - Confirm freeform tab works independently from project tabs
 - [ ] Update `LESSONS_LEARNED.md` with minimum 20 rules from gauntlet experience
 
 ### Completion Gate
@@ -215,6 +227,8 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Group continuity check passes
 - [ ] `LESSONS_LEARNED.md` contains 20+ gauntlet-derived rules
 - [ ] Anti-pattern detection rate: 90%+
+- [ ] Mode 7 freeform tested — 5 generations confirmed non-DNA, isolated from project state
+- [ ] Web UI approval workflow validated end-to-end
 - [ ] Git commit: `"Phase 5 complete: Practice Gauntlet passed"`
 
 ---
