@@ -11,6 +11,24 @@ If a gate criterion cannot be met, OpenClaw halts, documents the specific blocke
 
 ---
 
+### ⚠️ CRITICAL DEFINITION — TWO DIFFERENT THRESHOLDS
+
+This document references two thresholds. They measure completely different things.
+
+**95/100 — Individual sprite score.**
+Each sprite is evaluated on the rubric. It must earn 95 points or higher out of 100 to pass. This applies to every single sprite generated throughout the entire project.
+
+**99/100 production threshold — Batch pass rate. NOT a score of 99 points.**
+This means: in a validation batch of 100 generated sprites, at least 99 of those individual sprites must each independently score 95 or above on the rubric. This measures the model's overall reliability before advancing a phase or genre.
+
+- 99 sprites each scoring 95+ → BATCH THRESHOLD MET ✅
+- 1 sprite scoring 99 points → BATCH THRESHOLD NOT MET ❌ (only 1 sprite, need 99 out of 100 passing)
+- 98 sprites all scoring 100 points → BATCH THRESHOLD NOT MET ❌ (98 pass, minimum is 99)
+
+Every time this document says "99/100 threshold" it means this batch pass rate. It never refers to a point score of 99.
+
+---
+
 ## Phase 0 — System Initialization
 *Initialize environment, verify hardware, establish project structure*
 

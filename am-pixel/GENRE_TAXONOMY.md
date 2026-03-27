@@ -11,12 +11,26 @@ The goal is not to eventually support every genre ever made. The goal is to achi
 
 ---
 
+### ⚠️ CRITICAL DEFINITION — WHAT "99/100 THRESHOLD" MEANS
+
+The 99/100 production threshold is a BATCH PASS RATE. It is NOT a score of 99 points.
+
+It means: **in a validation batch of 100 generated sprites, at least 99 individual sprites must each independently score 95 or above on the evaluation rubric.**
+
+- 99 sprites each scoring 95+ out of 100 → THRESHOLD MET ✅
+- 1 sprite scoring 99 points → THRESHOLD NOT MET ❌
+- 98 sprites all scoring 100 points → THRESHOLD NOT MET ❌ (98 pass, need minimum 99)
+
+This definition applies every time the 99/100 threshold is mentioned in this document.
+
+---
+
 ## The Progression Model
 
 Each genre within a tier shares significant asset overlap with others in the same tier. Training on one genre in a tier accelerates training on adjacent genres because the underlying pixel art principles — proportion, palette construction, environment design — transfer heavily.
 
 **Advancement rule:**
-99 out of every 100 generated sprites must pass the 95/100 rubric threshold without requiring a rebuild before the system advances to the next genre. This is measured across a validation batch of 100 sprites per genre type (characters, enemies, tilesets, UI).
+In a validation batch of 100 generated sprites, at least 99 individual sprites must each independently score 95 or above on the evaluation rubric — without requiring a rebuild — before the system advances to the next genre. This batch is drawn evenly across all asset types for the genre (characters, enemies, tilesets, UI).
 
 ---
 

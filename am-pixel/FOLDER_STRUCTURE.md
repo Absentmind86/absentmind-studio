@@ -77,13 +77,18 @@ am-pixel/
 │   ├── palette_validator.py           ← Checks sprite against palette constraints
 │   ├── dna_diff.py                    ← Visual diff of sprite vs DNA specification
 │   ├── dna_extractor.py               ← Extracts DNA JSON from approved sprite
-│   ├── rubric_scorer.py               ← Scores sprite against evaluation rubric
+│   ├── rubric_scorer.py               ← Selects correct rubric (A/B/C) by asset type, returns score breakdown
 │   ├── banding_detector.py            ← Detects horizontal/vertical color banding
 │   ├── outline_checker.py             ← Identifies pure black outlines (must be local color)
+│   ├── anti_aliasing_detector.py      ← Flags sub-pixel blending (not allowed in SNES style)
+│   ├── seam_validator.py              ← Tests all four edges of tiles for seamless tiling
+│   ├── tileset_anchor_extractor.py    ← Derives Tileset Anchor from approved seed tiles
+│   ├── layer_compositor.py            ← Assembles parallax layers at scroll offsets for evaluation
+│   ├── effect_timing_evaluator.py     ← Evaluates battle effect timing and weight at playback speed
+│   ├── icon_grammar_checker.py        ← Validates icon set visual consistency within categories
 │   ├── sheet_manager.py               ← Non-destructive sprite sheet operations
 │   ├── comparison_sheet.py            ← Generates side-by-side project character comparison
 │   ├── continuity_checker.py          ← Runs all three continuity checks
-│   ├── anti_aliasing_detector.py      ← Flags sub-pixel blending (not allowed in SNES style)
 │   └── export/
 │       ├── godot_exporter.py          ← Godot SpriteFrames resource export
 │       ├── rpgmaker_exporter.py       ← RPG Maker MZ format export
@@ -120,6 +125,23 @@ am-pixel/
 │   │   └── .gitkeep
 │   ├── enemies/
 │   │   └── .gitkeep
+│   ├── battle_effects/
+│   │   ├── projectile/
+│   │   │   └── .gitkeep
+│   │   ├── area/
+│   │   │   └── .gitkeep
+│   │   ├── status/
+│   │   │   └── .gitkeep
+│   │   ├── healing/
+│   │   │   └── .gitkeep
+│   │   ├── elemental/
+│   │   │   └── .gitkeep
+│   │   ├── summon/
+│   │   │   └── .gitkeep
+│   │   ├── hit_impact/
+│   │   │   └── .gitkeep
+│   │   └── death/
+│   │       └── .gitkeep
 │   ├── tilesets/
 │   │   ├── towns/
 │   │   │   └── .gitkeep
@@ -132,7 +154,10 @@ am-pixel/
 │   │   ├── wilderness/
 │   │   │   └── .gitkeep
 │   │   └── world_map/
-│   │       └── .gitkeep
+│   │       ├── tiles/
+│   │       │   └── .gitkeep
+│   │       └── location_markers/
+│   │           └── .gitkeep
 │   ├── parallax/
 │   │   └── .gitkeep
 │   ├── ui/
@@ -142,7 +167,15 @@ am-pixel/
 │   │   │   └── .gitkeep
 │   │   ├── dialogue/
 │   │   │   └── .gitkeep
-│   │   └── inventory/
+│   │   ├── inventory/
+│   │   │   └── .gitkeep
+│   │   ├── item_icons/
+│   │   │   └── .gitkeep
+│   │   ├── status_icons/
+│   │   │   └── .gitkeep
+│   │   ├── element_icons/
+│   │   │   └── .gitkeep
+│   │   └── title_screen/
 │   │       └── .gitkeep
 │   └── fonts/
 │       └── .gitkeep

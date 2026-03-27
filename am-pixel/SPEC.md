@@ -15,10 +15,31 @@ AM Pixel is not a wrapper around Stable Diffusion, Midjourney, or any existing i
 
 The quality target is work that a pixel art expert cannot reliably distinguish from professional SNES-era studio output. This is not aspirational — it is the shipping standard. Assets that do not meet this bar are not presented to the user.
 
-**Passing threshold: 95/100 on the AM Pixel evaluation rubric.**
-**Production threshold: 99/100 of generations pass without rebuild.**
+**Individual sprite passing threshold: 95/100 on the AM Pixel evaluation rubric.**
+**Model production threshold: See batch pass rate definition below.**
 
-Until the 99/100 production threshold is met, the model is not in production. It is still training.
+---
+
+### ⚠️ CRITICAL DEFINITION — BATCH PASS RATE vs SCORE
+
+These are two completely different measurements. Read this before proceeding.
+
+**The 95/100 threshold** is a SCORE. Each individual sprite is evaluated on the rubric and must earn a score of 95 points or higher out of 100 to pass. A sprite that scores 94 fails. A sprite that scores 95 passes.
+
+**The 99/100 production threshold** is a BATCH PASS RATE. It is NOT a score of 99 points.
+
+It means: **in a validation batch of 100 generated sprites, a minimum of 99 individual sprites must each independently score 95 or above on the evaluation rubric.**
+
+Examples to make this unambiguous:
+
+- 99 sprites each scoring 95+ → PRODUCTION THRESHOLD MET ✅
+- 100 sprites each scoring 94 → PRODUCTION THRESHOLD NOT MET ❌ (none pass the 95 individual threshold)
+- 1 sprite scoring 99 points → PRODUCTION THRESHOLD NOT MET ❌ (only 1 sprite evaluated, need 99 passing out of 100)
+- 98 sprites scoring 100 points → PRODUCTION THRESHOLD NOT MET ❌ (98 pass, need minimum 99)
+
+Every time this document uses the phrase "99/100 production threshold" it means this batch pass rate. It never refers to a point score of 99.
+
+Until this batch pass rate is achieved, the model is not in production. It is still training.
 
 ---
 
@@ -173,18 +194,31 @@ After lock confirmation:
 1. Human describes character in natural language
 2. System asks: *"What sprite profiles do you need?"* — human responds naturally
 3. System proposes profile set with dimensions, awaits confirmation
-4. System generates master profile (highest detail) — single forward-facing sprite
-5. Approval loop: present candidate at 1x and 4x zoom → human adjusts or confirms
-6. On confirmation: DNA Lock Warning → extract DNA → generate full master profile sheet
-7. System works down through derived profiles (lower detail, same DNA)
-8. Each derived profile: generate candidate → confirm reads correctly at scale → generate sheet
-9. Final git commit with all sheets and DNA
+4. **System asks: "Is this a large or multi-tile enemy/boss?"** — if yes, activates large-format mode (see below)
+5. System generates master profile (highest detail) — single forward-facing sprite
+6. Approval loop: present candidate at 1x and 4x zoom → human adjusts or confirms
+7. On confirmation: DNA Lock Warning → extract DNA → generate full master profile sheet
+8. System works down through derived profiles (lower detail, same DNA)
+9. Each derived profile: generate candidate → confirm reads correctly at scale → generate sheet
+10. Final git commit with all sheets and DNA
 
 **Rules:**
 - Every candidate scored against rubric before human sees it
 - Human never sees a sub-95 sprite unless 5 attempts all fail (system reports scores and failure reasons)
 - Adjustment requests applied as targeted deltas, not full regeneration
 - Every sheet frame individually evaluated against rubric AND DNA continuity
+
+**Portrait Profile:**
+Portrait art is a standard profile type available to any character. Portraits are larger canvas (typically 48x48 to 64x64), higher detail, more expressive than battle sprites. When a portrait profile is requested, the system generates a forward-facing bust portrait first, runs approval loop, then generates any expression variants (neutral, happy, sad, angry, surprised) using the approved portrait as the DNA source. Portrait palette is derived from character DNA but may use additional detail colors (max 4 unique) to support the higher resolution.
+
+**Large-Format / Multi-Tile Boss Mode:**
+Standard battle sprites max at 64x64. Large bosses — those spanning multiple tile slots — require a multi-tile composition system. When large-format flag is set:
+- Human specifies approximate total dimensions (e.g., 96x96, 128x64, 96x128)
+- System designs the boss as a unified composition, then segments it into legal SNES tile-sized pieces
+- Each tile segment is generated and evaluated individually for technical compliance
+- Composition is also evaluated as a whole for visual coherence and readability
+- The sheet manifest tracks tile grid layout so the engine can reassemble the boss correctly
+- Animation frames for multi-tile bosses animate all tile segments in sync
 
 ### 5.2 Mode 2 — Sprite Sheet Extension
 
@@ -202,23 +236,54 @@ After lock confirmation:
 **Non-destructive guarantee:**
 The system maintains a `SHEET_LAYOUT` manifest per sheet. Occupied cells are locked. New sprites only go into empty cells. If no empty cells exist, sheet is expanded and manifest updated.
 
-### 5.3 Mode 3 — Environment & Tileset Generation
+### 5.3 Mode 3 — Environment, Tileset & Parallax Generation
 
 **The Aesthetic Proof:**
 Before generating a full tileset, the system produces a composed sample scene (~10x8 tiles) showing a representative subset of tiles — enough to evaluate the visual vibe, color temperature, and style coherence. This is not a technical preview of individual tiles. It is a holistic feel sample.
 
-**Flow:**
+**Tileset Flow:**
 1. Human describes environment in natural language
-2. System generates tile inventory list — all tile types needed
-3. System generates Aesthetic Proof scene
+2. System generates tile inventory list — all tile types needed including transition tiles
+3. System generates Aesthetic Proof scene using representative subset
 4. Approval loop: adjust vibe until confirmed
-5. Full tileset generated — each tile evaluated against rubric AND internal tileset consistency
-6. System asks: *"Are there animated tile variants needed?"* (water, torches, foliage, etc.)
-7. System asks: *"Are there interactive state variants needed?"* (doors, chests, destructibles)
-8. All variants generated as matched sets — same palette, guaranteed consistency
-9. System checks palette harmony against characters assigned to this environment
-10. Final organized tileset sheet presented, labeled by category
-11. Git commit with full tileset and manifests
+5. On confirmation: system locks a **Tileset Anchor** — the approved set of seed tiles whose palette, texture language, and detail density all subsequent tiles must match
+6. Full tileset generated — each tile evaluated against tileset rubric AND seam integrity check AND Tileset Anchor
+7. System asks: *"Are there animated tile variants needed?"* (water, torches, foliage, trees swaying, etc.)
+8. System asks: *"Are there interactive state variants needed?"* (doors, chests, destructibles, switches)
+9. All variants generated as matched sets — same palette, guaranteed seam continuity
+10. System checks palette harmony against characters assigned to this environment
+11. System asks: *"Are there world map location markers needed for this area?"* (town icon, dungeon icon, castle icon, port icon, etc.) — generates as matched icon set if yes
+12. Final organized tileset sheet presented, labeled by category
+13. Git commit with full tileset, manifests, and Tileset Anchor record
+
+**Seam Validation:**
+Every tile in the set is tested with `seam_validator.py` before approval. All four edges (top, bottom, left, right) must tile seamlessly with their neighbors. Any tile failing seam validation is rebuilt, not patched.
+
+**Transition Tiles:**
+Every tileset must include transition tiles — the connecting tiles between different surface types (grass-to-dirt, stone-to-water, road-to-grass). These are explicitly in the tile inventory and evaluated as part of the set, not as an afterthought.
+
+---
+
+### 5.3b Mode 3 Extension — Parallax Battle Backgrounds
+
+Parallax battle backgrounds are architecturally distinct from tilesets and require separate treatment. They are not tilesets. They are multi-layered atmospheric compositions where each layer scrolls at a different speed. Each layer must tile seamlessly horizontally.
+
+**Parallax Flow:**
+1. Human provides atmospheric brief: *"The floating continent — ancient ruins suspended in sky, late afternoon light, ominous"*
+2. System defines layer stack — typically 3-4 layers:
+   - **Sky layer:** farthest back, slowest scroll, sky/atmosphere
+   - **Far background:** mountains, distant structures, horizon elements
+   - **Midground:** main environmental elements, architecture
+   - **Foreground:** closest layer, fastest scroll, decorative framing elements
+3. System generates a **Parallax Anchor** — locked palette and atmospheric style before any layer generation begins
+4. Each layer is generated as a horizontally-tiling strip at SNES-legal dimensions
+5. Each layer evaluated individually: seam integrity, atmospheric consistency with Anchor
+6. Composition evaluated with `layer_compositor.py` — assembles all layers at multiple scroll offset ratios to verify depth separation and visual coherence at actual playback
+7. Approval loop: human evaluates the composed animation, requests adjustments
+8. On confirmation: all layers committed as matched set with composition manifest
+9. System verifies character contrast — player/enemy sprites must read clearly against the background
+
+**Parallax evaluation uses the Parallax Background Rubric (see Section 8).** The character rubric does not apply here.
 
 ### 5.4 Mode 4 — UI Generation
 
@@ -230,9 +295,69 @@ Before generating a full tileset, the system produces a composed sample scene (~
 5. On confirmation: generates full UI asset set for that style
 6. Assets organized into HUD, menus, dialogue frame, inventory, etc.
 
+**UI asset set includes:**
+- Dialogue box frame and variants (standard, wide, tall)
+- Menu window frames and cursor
+- HUD elements (HP bar, MP bar, status indicators)
+- Status condition icons — poison, sleep, silence, blind, stone, berserk, haste, slow, and all other game-specific conditions — generated as a visually coherent icon set
+- Element icons — fire, ice, lightning, wind, earth, water, holy, dark — generated as a matched set
+- Battle menu layout elements
+
+**Item and Equipment Icons (absorbed into Mode 4):**
+Item icons are 16x16 sprites with their own visual grammar. The system generates these as categorized icon families:
+- Weapons (swords, spears, bows, staves, rods) — shared visual language within category
+- Armor and accessories
+- Consumables (potions, ethers, tents, phoenix downs)
+- Key items — unique per item, more illustrative than icon-grammar items
+All icons evaluated for category coherence as a set, not just individually. Palette must harmonize with the UI style they live inside.
+
+**World Map Location Markers:**
+When a world map tileset is generated, system asks if location markers are needed. Marker types: town, large city, dungeon, castle, port, cave, forest shrine, airship/vehicle. Generated as a matched icon set with consistent size, outline weight, and visual register.
+
+**Title Screen:**
+Title screen is a special UI mode accessed explicitly. Human provides: game title text, overall aesthetic direction, key visual elements. System generates:
+- Background composition (treated as a single large parallax-style composition)
+- Logo/title treatment in the project font style
+- Menu prompt elements
+Approval loop runs on the overall composition before any element is finalized.
+
 ### 5.5 Mode 5 — Font Generation
 
 Treated identically to UI generation — curated options presented, selection made, adjustments applied, full character set generated on confirmation.
+
+---
+
+### 5.6 Mode 6 — Battle Effect Animations
+
+Battle effects are animated sprite sequences used in combat — spell animations, hit impacts, status inflictions, healing glows, summon sequences, death particles. They are completely absent from standard character and tileset pipelines and require their own mode.
+
+**Why a separate mode:**
+- Often use non-standard palettes — magical fire uses colors that exist in no character's DNA
+- Primary quality criteria are timing and frame economy, not outline technique
+- Canvas sizes vary by targeting type (single character vs full screen vs area)
+- Frame counts range from 4 (hit flash) to 20+ (summon sequence)
+
+**Effect Taxonomy:**
+Every effect belongs to one of these categories, each with defined conventions:
+- **Projectile effects** — travel animations for arrows, fireballs, ice shards, wind blades
+- **Area explosion effects** — impact blooms for area spells (Meteor, Ultima)
+- **Status infliction effects** — visual indicator for poison cloud, sleep sparkles, silence bell
+- **Healing effects** — cure glow, regen shimmer, raise light beam
+- **Elemental strike effects** — fire burst on hit, ice crystal shatter, lightning fork impact
+- **Summon sequences** — longer multi-phase animations for espers/summons (cinematic quality)
+- **Hit impact frames** — generic physical hit flash, critical hit burst, miss indicator
+- **Death sequences** — enemy defeat animation (dissolve, explode, collapse)
+- **Environmental hazard animations** — lava drip, poison swamp bubble, trap trigger
+
+**Flow:**
+1. Human describes the effect: *"A fire spell — starts as a small spark at the target, blooms into a full fireball burst across 3 frames, then dissipates in 2 frames"*
+2. System identifies effect category and proposes: frame count, canvas size, palette (may use effect-specific palette outside MASTER_PALETTE), targeting type
+3. Human confirms or adjusts spec
+4. System generates all frames as a sequence
+5. Evaluation uses the **Effect Animation Rubric** (see Section 8) — timing and weight are primary criteria
+6. Approval loop: human evaluates at actual playback speed
+7. On confirmation: frames committed as numbered sequence with effect manifest
+8. Effect manifest records: category, frame count, canvas size, palette, targeting type, recommended frame timing in ticks
 
 ---
 
@@ -244,11 +369,21 @@ Treated identically to UI generation — curated options presented, selection ma
 PROJECT: [Game Name]
 ├── CHARACTERS
 │   └── [Character Name]
-│       ├── Battle Sprites      (48x64 or similar — detailed animations)
+│       ├── Battle Sprites      (48x64 or larger — detailed animations, multi-tile if boss)
+│       ├── Portrait Art        (48x48–64x64 — dialogue portraits, expression variants)
 │       ├── World Sprites       (16x24 — walk cycles, interactions)
 │       └── Overworld Sprites   (8x16 — chibi global map version)
 ├── ENEMIES
-│   └── [same profile structure as characters]
+│   └── [same profile structure — large-format flag for bosses]
+├── BATTLE EFFECTS
+│   ├── Projectile Effects
+│   ├── Area Effects
+│   ├── Status Effects
+│   ├── Healing Effects
+│   ├── Elemental Strikes
+│   ├── Summon Sequences
+│   ├── Hit Impacts
+│   └── Death Sequences
 ├── TILESETS
 │   ├── Towns
 │   ├── Dungeons
@@ -256,13 +391,22 @@ PROJECT: [Game Name]
 │   ├── Caves
 │   ├── Wilderness
 │   └── World Map
-├── PARALLAX
-│   └── [scene-specific layered backgrounds]
+│       └── Location Markers    (town, dungeon, castle, port, cave, airship icons)
+├── PARALLAX BACKGROUNDS
+│   └── [scene name]
+│       ├── Sky Layer
+│       ├── Far Background
+│       ├── Midground
+│       └── Foreground
 ├── UI
 │   ├── HUD
 │   ├── Menus
 │   ├── Dialogue
-│   └── Inventory
+│   ├── Inventory
+│   ├── Item Icons
+│   ├── Status Icons
+│   ├── Element Icons
+│   └── Title Screen
 └── FONTS
     └── [font sets by use case]
 ```
@@ -327,16 +471,58 @@ The evaluation engine is the most important component. Weak evaluation produces 
 - Every rejection documents specific, technical failure points
 - Every pass documents what succeeded — added to `LESSONS_LEARNED.md`
 
-### 8.3 Rubric Categories
+### 8.3 The Three Rubrics
+
+**Different asset types require different evaluation criteria.** A single rubric cannot evaluate characters, tilesets, and parallax backgrounds with equal accuracy. Three rubrics are defined. The correct rubric is selected automatically based on asset type.
+
+---
+
+#### Rubric A — Character / Enemy / Portrait / Effect Sprites
+
+Applies to: all character profiles, NPC sprites, enemy sprites, portrait art, boss sprites, battle effects.
 
 | Category | Points | What Is Evaluated |
 |----------|--------|-------------------|
-| Technical Compliance | 25 | SNES hardware accuracy, palette limits, tile dimensions, no anti-aliasing |
-| Construction Quality | 25 | Outline technique, shading method, color ramp quality, no banding, no pillow shading |
+| Technical Compliance | 25 | SNES palette limits, tile dimensions, no anti-aliasing, color space |
+| Construction Quality | 25 | Outline technique, shading method, hue-shifted ramps, no banding, no pillow shading |
 | Readability | 20 | Silhouette clarity at 1x, key feature legibility, character distinguishability |
 | Animation Quality | 15 | Weight, timing, frame economy, physicality — evaluated at playback speed |
 | Originality | 10 | Cannot be identified as remix of a specific reference sprite |
 | Soul | 5 | Does the sprite have personality? Memorable after one encounter? |
+| **PASSING THRESHOLD** | **95/100** | **Below 95 = full rebuild** |
+
+*For battle effects specifically: Animation Quality weight increases to 25, Construction Quality decreases to 15 — timing and weight are the primary craft criteria for effects.*
+
+---
+
+#### Rubric B — Tilesets
+
+Applies to: all environment tilesets, world map tilesets, animated tile sets, interactive state tile sets.
+
+| Category | Points | What Is Evaluated |
+|----------|--------|-------------------|
+| Seam Integrity | 30 | Every edge tiles seamlessly with neighbors on all four sides — zero visible seams at any valid combination |
+| Visual Recession | 20 | Tiles read as background — they do not compete with character sprites for attention |
+| Texture Coherence | 20 | All tiles share the same texture language, palette feel, and detail density as the Tileset Anchor |
+| Atmospheric Consistency | 15 | Set has a unified time-of-day, weather, material feel, and light direction |
+| Completeness | 10 | Set includes all required tile types including transition tiles between surface types |
+| Technical Compliance | 5 | SNES palette constraints, tile dimensions |
+| **PASSING THRESHOLD** | **95/100** | **Below 95 = full rebuild** |
+
+---
+
+#### Rubric C — Parallax Battle Backgrounds
+
+Applies to: all parallax background layer sets.
+
+| Category | Points | What Is Evaluated |
+|----------|--------|-------------------|
+| Layer Seaming | 25 | Each layer tiles horizontally without visible seams at any scroll position |
+| Layer Depth Differentiation | 25 | Layers read as clearly near/far — visual separation holds at multiple scroll offset ratios |
+| Atmospheric Cohesion | 20 | All layers share palette feel, light direction, and weather — unified scene |
+| Character Contrast | 15 | Background recedes sufficiently that player and enemy sprites read clearly in front of it |
+| Emotional Tone | 10 | Does the background communicate the correct feeling for its context |
+| Technical Compliance | 5 | Layer dimensions, SNES palette constraints |
 | **PASSING THRESHOLD** | **95/100** | **Below 95 = full rebuild** |
 
 ### 8.4 Pixel-Diff Tooling
@@ -346,7 +532,13 @@ The evaluation engine uses visual diff tools — not just abstract scoring:
 - `dna_diff.py` — visual overlay showing DNA deviations in a candidate sprite
 - `banding_detector.py` — flags horizontal or vertical color bands
 - `outline_checker.py` — identifies pure black outlines (must be darkened local color)
-- `rubric_scorer.py` — returns numeric score with per-category breakdown and specific failure descriptions
+- `rubric_scorer.py` — selects correct rubric (A/B/C) by asset type, returns score with per-category breakdown and specific failure descriptions
+- `seam_validator.py` — tests all four edges of every tile for seamless tiling at all valid neighbor combinations
+- `tileset_anchor_extractor.py` — derives Tileset Anchor palette, texture language, and detail density from approved seed tiles; all subsequent tiles validated against it
+- `layer_compositor.py` — assembles parallax layers at multiple scroll offset ratios for composition evaluation and character contrast testing
+- `effect_timing_evaluator.py` — evaluates battle effect animation frame timing and weight at actual playback speed
+- `icon_grammar_checker.py` — validates that icon sets (items, status, elements) share consistent visual grammar within categories
+- `anti_aliasing_detector.py` — flags sub-pixel blending (not allowed in SNES style)
 
 ### 8.5 Anti-Pattern Library
 
