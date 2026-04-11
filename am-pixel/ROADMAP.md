@@ -1,5 +1,5 @@
 # AM Pixel — Execution Roadmap
-**Absentmind Studio | Version 1.1**
+**Absentmind Studio | Version 1.2**
 
 ---
 
@@ -33,24 +33,31 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 *Initialize environment, verify hardware, establish project structure*
 
 ### Tasks
-- [ ] Verify NVIDIA GPU available with CUDA support — log GPU model, VRAM, CUDA version
-- [ ] Verify PyTorch CUDA installation functional
+- [ ] Run hardware detection via `model/hardware/detector.py` — detect available GPU/backend, log result to `logs/hardware.log`. Proceed on ANY hardware tier. Do NOT halt if CUDA is unavailable.
+  - Detection hierarchy: NVIDIA→CUDA, AMD→ROCm, Apple Silicon→MPS, other GPU→OpenCL, no GPU→CPU
+  - Log: GPU model, VRAM, backend selected, baseline inference speed (tokens/sec on a 16×16 test sprite)
+- [ ] Verify PyTorch installation functional on detected backend
 - [ ] Initialize full folder structure per `FOLDER_STRUCTURE.md`
 - [ ] Initialize git repo (or connect to existing GitHub repo)
 - [ ] Install all required Python dependencies — log versions
 - [ ] Verify disk space — minimum 100GB available for training data and model checkpoints
-- [ ] Build all required tooling scripts (palette_validator, dna_diff, rubric_scorer, sheet_manager, etc.)
+- [ ] Build all required tooling scripts (palette_validator, dna_diff, rubric_scorer, sheet_manager, seam_validator, layer_compositor, effect_timing_evaluator, icon_grammar_checker, etc.)
+- [ ] Audit all training and inference scripts — confirm zero hardcoded `"cuda"` strings; all device references must route through `model/hardware/detector.py`
 - [ ] Create `pipeline/modes/mode7_freeform.py` stub with documented interface
 - [ ] Initialize `ui/` directory — build working web UI skeleton: chat panel, 1×/4× image preview, approve/reject/adjust controls, project tabs, freeform tab. Must be functional before Phase 5.
+- [ ] Initialize empty log placeholder files in `logs/` (hardware.log, training.log, evaluation.log, generation_log.md, rebuild_log.md, errors.log, BLOCKERS.md, phase_gates.md)
 - [ ] Run tool validation tests — confirm each tool produces correct output on test inputs
 - [ ] Write initial commit: `"Phase 0 complete: environment initialized"`
 
 ### Completion Gate
-- [ ] GPU confirmed with CUDA, VRAM logged
+- [ ] Hardware detection ran successfully — backend logged to `logs/hardware.log` with GPU model, VRAM, backend, and baseline inference speed
+- [ ] PyTorch functional on detected backend
+- [ ] Zero hardcoded `"cuda"` strings in any script — confirmed by audit
 - [ ] All tooling scripts pass validation tests
 - [ ] Full folder structure exists and is committed
 - [ ] `mode7_freeform.py` stub exists and is committed
-- [ ] Web UI skeleton is running on localhost — chat panel, preview, and approve/reject are functional (content not required yet, structure must work)
+- [ ] Web UI skeleton is running on localhost — chat panel, preview, and approve/reject are functional
+- [ ] All log placeholder files initialized and committed
 - [ ] No Phase 0 tasks remain incomplete
 
 ---
@@ -143,10 +150,18 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
   - Programmatically generate 500+ intentionally bad sprites using rule violations
   - Pair with corrected versions and labeled failure modes
   - Used for evaluation engine calibration
+- [ ] Apply structure-aware token ordering to all sequences
+  - Classify every pixel in every training sprite into five categories: transparent, outline, fill, shade, detail
+  - Reorder token sequences: transparent first, then outline, fill, shade, detail
+  - Preserve original (x, y) positional encodings alongside reordered sequences
+  - Log distribution of all five pixel categories across the full corpus
+  - Flag any category below 3% representation for review before proceeding
 - [ ] Split corpus: 90% training, 10% validation
 
 ### Completion Gate
 - [ ] Corpus contains 50,000+ sprite sequences in palette-index format
+- [ ] All sequences stored in structure-aware order: transparent → outline → fill → shade → detail
+- [ ] Pixel category distribution logged — no category is below 3% of total tokens across corpus
 - [ ] Anti-pattern dataset contains 500+ labeled examples
 - [ ] Train/validation split documented
 - [ ] Data pipeline scripts tested and validated on sample batches
@@ -180,11 +195,28 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
   - Generate 100 test sprites from DNA conditioning
   - Score all 100 against rubric
   - Log pass rate and failure mode distribution
+- [ ] Run structure-aware ordering experiment
+  - Train a parallel model on identical corpus in raster order
+  - Compare rubric pass rates on held-out validation set
+  - Document result in `logs/training_log.md` — keep whichever performs better
+- [ ] Run sequence length risk evaluation (CHANGE-007)
+  - Generate 50 sprites across a range of sizes including battle sprites (48×64+)
+  - Measure rubric pass rate separately for sequences <1,500 tokens and >1,500 tokens
+  - If >1,500 token pass rate < 70%: HALT Phase 4 advancement, implement hierarchical generation
+- [ ] Run DNA conditioning consistency measurement (CHANGE-008)
+  - Generate 20 battle sprites (48×64 minimum)
+  - Run `dna_diff.py` separately on top half vs bottom half of each sprite
+  - Log the consistency delta — if bottom half is >10% lower than top half consistently, flag for Phase 6 cross-attention upgrade
 
 ### Completion Gate
 - [ ] Model trains without errors to convergence
 - [ ] Validation loss below target threshold (defined during training)
 - [ ] Initial evaluation: minimum 50/100 sprites passing rubric (baseline — model is not good yet, this just proves it's functional)
+- [ ] Structure-aware vs raster ordering comparison documented in `logs/training_log.md`
+- [ ] Sequence length evaluation completed — pass rates for <1,500 tokens and >1,500 tokens logged separately
+- [ ] DNA conditioning consistency measured — top-half vs bottom-half delta logged for 20 battle sprites
+- [ ] If sequences >1,500 tokens pass rate < 70%: DO NOT advance to Phase 5. Implement hierarchical generation and re-train. Document decision in `logs/phase_gates.md`.
+- [ ] If bottom-half DNA consistency is >10% lower than top-half: document as Phase 6 priority — upgrade to cross-attention conditioning
 - [ ] Git commit: `"Phase 4 complete: Initial model trained"`
 
 ---
@@ -272,17 +304,21 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Integrate continuity checker into production flow
 - [ ] Integrate export engine (Godot, RPG Maker MZ, GameMaker, generic JSON)
 - [ ] Implement GitHub repo integration (read existing assets, commit on approval)
-- [ ] Implement all five generation modes (character, extension, tileset, UI, font)
+- [ ] Implement all seven generation modes (character, extension, tileset/parallax, UI, font, battle effects, freeform)
 - [ ] Implement project tab organization system
 - [ ] Implement seasonal and time-of-day tileset variant generation
 - [ ] Implement NPC archetype variant system
 - [ ] Implement state-based tile generation (door open/closed, chest open/closed, etc.)
 - [ ] Build local inference server (FastAPI endpoint)
+- [ ] Implement prompt expansion layer (Mode 5b) — language model API call with SNES style-bible guardrails, editable output, genre-aware system prompt
+- [ ] Evaluate animation temporal coherence — generate 5 walk cycles, score Animation Quality rubric category specifically for motion quality (not character quality). If motion quality failures are consistent, implement temporal frame conditioning before Phase 8.
 - [ ] End-to-end test: create a complete sample project with 3 characters, 1 tileset, UI, and font
 
 ### Completion Gate
-- [ ] All five generation modes functional end-to-end
-- [ ] Complete sample project created and committed to test repo
+- [ ] All seven generation modes functional end-to-end
+- [ ] Prompt expansion layer functional and tested with SNES style-bible guardrails active
+- [ ] Temporal coherence evaluated — motion quality rubric scores documented, temporal conditioning implemented if needed
+- [ ] Complete sample project created and committed to test repo (3 characters, 1 tileset, 1 parallax background, UI, font, 2 battle effects)
 - [ ] Export tested in at minimum Godot and RPG Maker MZ
 - [ ] GitHub integration tested on real repo
 - [ ] Local inference server operational
@@ -351,4 +387,4 @@ Do not silently fail. Do not work around a fundamental problem without documenti
 
 ---
 
-*AM Pixel Execution Roadmap v1.0 | Absentmind Studio*
+*AM Pixel Execution Roadmap v1.2 | Absentmind Studio*

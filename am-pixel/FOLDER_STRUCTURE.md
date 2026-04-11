@@ -1,5 +1,5 @@
 # AM Pixel — Project Folder Structure
-**Absentmind Studio | Version 1.1**
+**Absentmind Studio | Version 1.2**
 
 OpenClaw initializes this exact structure in Phase 0. Every directory and file listed here must exist before Phase 1 begins. Placeholder files use `.gitkeep`.
 
@@ -31,10 +31,12 @@ am-pixel/
 │   └── LIGHTING_STANDARD.md           ← Light source and environmental lighting rules
 │
 ├── model/                             ← Custom transformer model
+│   ├── hardware/
+│   │   └── detector.py                ← GPU/backend detection utility — ALL device references route through here. Built in Phase 0.
 │   ├── architecture/
 │   │   ├── transformer.py             ← Core model architecture (PyTorch)
-│   │   ├── conditioning.py            ← DNA conditioning encoder
-│   │   ├── tokenizer.py               ← Palette index tokenizer
+│   │   ├── conditioning.py            ← DNA conditioning encoder (prefix method; cross-attention upgrade path documented in SPEC §3.4)
+│   │   ├── tokenizer.py               ← Palette index tokenizer (structure-aware ordering: transparent→outline→fill→shade→detail)
 │   │   └── config.py                  ← Model hyperparameters
 │   ├── training/
 │   │   ├── train.py                   ← Main training loop
@@ -59,6 +61,8 @@ am-pixel/
 │   ├── pipeline/
 │   │   ├── extractor.py               ← Sprite extraction from sprite sheets
 │   │   ├── indexer.py                 ← RGB → palette index conversion
+│   │   ├── pixel_classifier.py        ← Classifies each pixel as transparent/outline/fill/shade/detail for structure-aware ordering
+│   │   ├── sequence_reorderer.py      ← Reorders token sequences: transparent→outline→fill→shade→detail with positional encoding preservation
 │   │   ├── validator.py               ← SNES palette compliance validation
 │   │   ├── metadata.py                ← Metadata tagging for training pairs
 │   │   └── splitter.py                ← Train/validation split
@@ -99,7 +103,8 @@ am-pixel/
 │   ├── approval/
 │   │   ├── conversation.py            ← Natural language approval loop
 │   │   ├── presenter.py               ← Candidate presentation (1x and 4x zoom)
-│   │   └── adjustment_handler.py      ← Applies adjustment requests as deltas
+│   │   ├── adjustment_handler.py      ← Applies adjustment requests as deltas
+│   │   └── prompt_expander.py         ← Optional character brief expansion (Mode 5b) — LLM API call with SNES style-bible guardrails
 │   ├── modes/
 │   │   ├── mode1_character.py         ← Character creation mode
 │   │   ├── mode2_extension.py         ← Sprite sheet extension mode
@@ -203,12 +208,15 @@ am-pixel/
 │   │   └── .gitkeep
 │   └── gauntlet_report.md             ← Gauntlet results and lessons
 │
-├── logs/                              ← System operation logs
+├── logs/                              ← System operation logs — ALL initialized as empty placeholder files in Phase 0
+│   ├── hardware.log                   ← Hardware detection result: GPU model, VRAM, backend, baseline inference speed
 │   ├── generation_log.md              ← Log of every generation attempt with scores
 │   ├── rebuild_log.md                 ← Log of every rebuild with root cause
-│   ├── training_log.md                ← Training run summaries
+│   ├── training_log.md                ← Training run summaries + architecture experiment results
+│   ├── evaluation.log                 ← Evaluation engine accuracy tracking
+│   ├── errors.log                     ← Runtime errors and stack traces
 │   ├── BLOCKERS.md                    ← Documented blockers awaiting human input
-│   └── phase_gates.md                 ← Record of phase gate completions
+│   └── phase_gates.md                 ← Record of phase gate completions with evidence
 │
 ├── tests/                             ← Automated tests for all tooling
 │   ├── test_palette_validator.py
@@ -219,7 +227,7 @@ am-pixel/
 │   └── test_export.py
 │
 ├── requirements.txt                   ← Python dependencies
-├── requirements_cuda.txt              ← CUDA-specific dependencies
+├── requirements_hardware.txt          ← Hardware-specific dependencies (CUDA/ROCm/MPS variants)
 └── .env.example                       ← Environment variable template (no secrets)
 ```
 
@@ -259,4 +267,4 @@ BLOCKER: [short description] — awaiting human input
 
 ---
 
-*AM Pixel Folder Structure v1.1 | Absentmind Studio*
+*AM Pixel Folder Structure v1.2 | Absentmind Studio*

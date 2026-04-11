@@ -1,5 +1,5 @@
 # AM Pixel — OpenClaw Execution Prompt
-**Absentmind Studio | Version 1.1**
+**Absentmind Studio | Version 1.2**
 
 ---
 
@@ -21,14 +21,25 @@ You have full authority to read and write files, execute shell commands, install
 
 ## YOUR FIRST ACTION
 
-Before doing anything else, read the following documents in this exact order. Do not skip any. Do not begin Phase 0 until you have read all of them.
+Before doing anything else, read the following documents in this exact order. Do not skip any section of any document. Do not begin Phase 0 until you have read all of them completely.
 
-1. `am-pixel/SPEC.md` — Full technical specification. This is your primary reference document. Read it completely.
-2. `am-pixel/ROADMAP.md` — Your phased execution plan. Every task and gate is defined here.
-3. `am-pixel/GENRE_TAXONOMY.md` — Genre definitions, mastery thresholds, progression order.
-4. `am-pixel/FOLDER_STRUCTURE.md` — Exact file and folder structure you initialize in Phase 0.
+- `README.md` (repo root) — Project overview, brand context, suite structure
+- `am-pixel/SPEC.md` — Full technical specification. This is your primary reference document. Read every section.
+- `am-pixel/ROADMAP.md` — Your phased execution plan. Every task and gate is defined here.
+- `am-pixel/GENRE_TAXONOMY.md` — Genre definitions, mastery thresholds, progression order.
+- `am-pixel/FOLDER_STRUCTURE.md` — Exact file and folder structure you initialize in Phase 0.
 
-Read all four completely before writing a single line of code or creating a single file. Understanding the full system before beginning is not optional — it is the difference between building the right thing and building something that needs to be torn down.
+If any document exceeds your context window, state exactly which one and wait for it to be provided in chunks. Do not proceed with partial understanding of any document.
+
+**Before beginning any Phase 0 task, output the following written confirmation demonstrating you have understood the critical definitions:**
+
+> "I have read all five documents completely. I confirm:
+> 1. The 95/100 threshold is an INDIVIDUAL SPRITE SCORE — each sprite must earn 95 or more points on the rubric to pass.
+> 2. The 99/100 threshold is a BATCH PASS RATE — in a validation batch of 100 sprites, at least 99 individual sprites must each independently score 95 or above. This is NOT a score of 99 points.
+> 3. This project uses an autoregressive transformer generating discrete palette-index tokens. It will NEVER use diffusion models, RGB image generation, 3D-to-pixel pipelines, or any approach that generates in continuous color space at any stage.
+> 4. Hardware detection runs at Phase 0 startup. The system proceeds on whatever hardware is available — CUDA, ROCm, MPS, or CPU. There is no hardware halt condition."
+
+If you cannot output this confirmation accurately, re-read the relevant sections before proceeding.
 
 ---
 
@@ -82,10 +93,19 @@ This tool exists because its creator has no art skills and cannot build the game
 
 ## HARDWARE CONTEXT
 
-- NVIDIA GPU with CUDA — use CUDA-native PyTorch throughout
-- Do not use ROCm or CPU fallback training — these are not acceptable for this project
-- Verify CUDA availability as your absolute first action in Phase 0
-- If CUDA is not available, halt immediately and document in `BLOCKERS.md` — do not proceed with training phases on CPU
+AM Pixel runs on any hardware. Do not hardcode CUDA or assume NVIDIA.
+
+Your first Phase 0 action is to build and run `model/hardware/detector.py`, which detects the best available backend and logs it to `logs/hardware.log`. Detection priority:
+
+1. NVIDIA GPU → CUDA (fastest; preferred for training)
+2. AMD GPU → ROCm (PyTorch-supported; near-equivalent performance)
+3. Apple Silicon → MPS — Metal Performance Shaders
+4. Other GPU → OpenCL via PyTorch extensions
+5. No GPU → CPU (inference is usable; training is slow — plan accordingly)
+
+All device references throughout the codebase must route through this utility. Audit every script for hardcoded `"cuda"` strings — there must be zero. This audit is a Phase 0 gate criterion.
+
+Cloud GPU rental (RunPod, Vast.ai, Lambda Labs) is recommended if training on CPU — but the system must be functional on CPU so that users without GPUs can still run inference.
 
 ---
 
@@ -117,10 +137,10 @@ Every decision you make — what to study, how to train, how to evaluate, what t
 
 ## BEGIN
 
-Read the four documents. Then begin Phase 0.
+Read the five documents listed above. Output your written confirmation. Then begin Phase 0.
 
 The product you are building does not exist anywhere in the world. You are building something new. Build it right.
 
 ---
 
-*AM Pixel OpenClaw Prompt v1.1 | Absentmind Studio*
+*AM Pixel OpenClaw Prompt v1.2 | Absentmind Studio*

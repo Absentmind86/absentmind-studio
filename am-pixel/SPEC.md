@@ -1,5 +1,5 @@
 # AM Pixel — Full Technical Specification
-**Absentmind Studio | Version 1.1**
+**Absentmind Studio | Version 1.2**
 
 ---
 
@@ -66,7 +66,7 @@ The model is conditioned on structured DNA specifications at generation time. DN
 - Vocabulary: project palette indices (max 256 for full SNES palette, typically 15 per character)
 - Conditioning: structured DNA JSON prepended as context tokens
 - Training objective: next-token prediction on palette-index sequences
-- Hardware target: NVIDIA GPU with CUDA, minimum 10GB VRAM
+- Hardware target: Universal — detected automatically at startup. See Section 14 Technical Stack for detection hierarchy.
 
 ### 3.2 The Training Pipeline
 
@@ -84,6 +84,29 @@ Curated high-quality subset. Only sprites that pass the evaluation rubric. Teach
 3. Broader sprite corpus from public archives
 4. Approved production assets from AM Pixel users (opt-in, anonymized)
 
+**Structure-aware token ordering (CHANGE-001):**
+Training sequences are NOT stored in raster order (left-to-right, top-to-bottom). They are reordered into structure-aware order that mirrors how a professional pixel artist actually constructs a sprite:
+
+1. **Transparent pixels first** — the full alpha mask, committing to the spatial boundary before any visible content
+2. **Outline pixels second** — the single-pixel silhouette border
+3. **Base fill pixels third** — large flat color regions (body, clothing, skin)
+4. **Shading pixels fourth** — shadow and highlight ramps applied to base fills
+5. **Detail pixels last** — small features, accessories, face details
+
+Positional encodings preserve the original (x, y) canvas coordinates so the model can reconstruct spatial position regardless of generation order. The transformer architecture itself is unchanged — only the ordering of training sequences changes. At inference time, the model generates in the same learned order.
+
+The pixel classification step is rule-based: transparent pixels are those with alpha=0; outline pixels are non-transparent pixels adjacent to transparent pixels; fill pixels are large contiguous single-palette-index regions; shading pixels are non-outline pixels in shadow/highlight ramps; detail pixels are everything remaining.
+
+**Phase 3 experiment requirement:** Compare structure-aware ordering vs raster ordering on a held-out validation set during Phase 4. If structure-aware ordering does not produce measurable improvement in rubric scores, revert to raster. Document the comparison in `logs/training_log.md`.
+
+**Training data sourcing priority:**
+1. Permissively licensed sprite archives (OpenGameArt.org, itch.io free packs)
+2. Community-contributed pixel art repositories
+3. Broader sprite corpus from public archives
+4. Approved production assets from AM Pixel users (opt-in, anonymized)
+
+The data pipeline must log the distribution of all five pixel categories (transparent, outline, fill, shade, detail) across the training corpus. If any category is severely underrepresented, this will cause generation failures and must be caught during Phase 3 before training begins.
+
 ### 3.3 System Components
 
 | Component | Responsibility |
@@ -93,15 +116,62 @@ Curated high-quality subset. Only sprites that pass the evaluation rubric. Teach
 | Freeform Engine | Unconstrained generation mode — bypasses DNA and style bible, uses full 256-color vocabulary, any resolution, outputs PNG only. See Mode 7. |
 | Evaluation Engine | Scores every candidate against the correct rubric (A/B/C) before human sees it. Cannot pass below 95 for project modes. |
 | DNA Store | Persistent database of every approved character's exact visual specification |
-| Approval Pipeline | Human-facing conversation layer — text input, candidate presentation, adjustment handling |
+| Approval Pipeline | Human-facing conversation layer — text input, candidate presentation, adjustment handling, optional prompt expansion for character briefs |
 | Project Registry | Master project state — palette, proportion system, animation standards, all assets |
 | Sheet Manager | Non-destructive sprite sheet management — reads/writes using layout manifests |
 | Export Engine | Converts approved assets to target engine formats |
-| Web UI | Full local web interface — chat, 1×/4× sprite preview, approve/reject controls, project tabs, freeform tab, continuity manifest viewer. See Section 14. |
+| Web UI | Full local web interface — chat, 1×/4× sprite preview, approve/reject controls, project tabs, freeform tab, continuity manifest viewer. See Section 13. |
 
 ---
 
-## 4. The Character DNA System
+### 3.4 Known Architectural Risks — Decisions Required Before Phase 4
+
+These are documented risks in the autoregressive architecture that must be explicitly addressed before the transformer is built. They cannot be retrofitted cleanly after Phase 4 begins.
+
+---
+
+**Risk A — Sequence Length and Error Accumulation (CHANGE-007)**
+
+Autoregressive models accumulate prediction errors over long sequences. A 16×24 world sprite is 384 tokens — manageable. A 48×64 battle sprite is 3,072 tokens. At that length, errors from early tokens compound and the bottom/right portion of the sprite degrades into anatomical inconsistency or palette drift. This is a documented failure mode in every pixel-level autoregressive model from PixelCNN onward. The 99/100 batch threshold will be very difficult to hit consistently at battle-sprite scale without explicit mitigation.
+
+Structure-aware generation order (CHANGE-001) partially mitigates this by front-loading structurally critical tokens. It is not a complete fix for sequences above ~1,500 tokens.
+
+**Phase 4 gate — sequence length evaluation:**
+After initial training, generate 50 sprites across a range of sizes. Measure pass rate separately for sequences under 1,500 tokens vs over 1,500 tokens. If pass rate for sequences over 1,500 tokens falls below 70%, implement hierarchical generation before proceeding to Phase 5.
+
+**Hierarchical generation (if needed):**
+Generate a coarse low-resolution palette grid first (e.g., 6×8 for a 48×64 sprite at 8× downscale), then autoregressively refine at progressively higher resolutions, conditioning each scale on the previous output plus the DNA. This slashes effective sequence length per step and gives the model global structure before committing to fine detail. More architecturally complex but has the strongest theoretical basis for long-sequence coherence.
+
+---
+
+**Risk B — DNA Conditioning Signal Dilution at Long Sequences (CHANGE-008)**
+
+The current spec conditions generation by prepending DNA JSON as context tokens. For 16×24 sprites (384 tokens) this works well. For 48×64 battle sprites (3,072 tokens), the attention mechanism must span thousands of tokens back to the DNA prefix. In practice, the conditioning signal weakens — later tokens are less tightly constrained by the DNA than earlier ones. This means a battle sprite's lower body may be less palette-accurate than its head and shoulders.
+
+**Implementation — Start with prefix conditioning (current spec):**
+Build exactly as specified — DNA JSON prepended as context tokens. Measure conditioning strength empirically.
+
+**Phase 4 measurement task:**
+After initial training, generate 20 battle sprites. Run `dna_diff.py` separately on the top half vs. bottom half of each sprite. Document the delta in DNA consistency score. If bottom-half consistency is more than 10% lower than top-half consistency consistently, upgrade to cross-attention conditioning in Phase 6.
+
+**Cross-attention upgrade path (if needed):**
+The DNA JSON is encoded into a fixed set of learned conditioning vectors that attend to every token prediction step via dedicated cross-attention layers. The DNA signal is equally strong at token 1 and token 3,072. Architecturally more complex — requires adding cross-attention heads — but eliminates conditioning dilution entirely.
+
+Do not build cross-attention from the start without evidence it is needed. Test the simple version first.
+
+---
+
+**Risk C — Animation Temporal Coherence (CHANGE-009)**
+
+The current spec generates each animation frame independently, conditioned only on the shared DNA. This enforces character continuity (same colors, same proportions) but not motion continuity. A walk cycle generated frame-by-frame will have consistent character identity but may not read as a coherent motion sequence — frames may look like the same character drawn multiple times rather than the same character in motion.
+
+**Phase 7-8 evaluation task:**
+After the full pipeline is integrated, evaluate whether frame-independent generation with DNA conditioning is sufficient for walk cycles at the 95/100 rubric threshold. Specifically: does the walk cycle fail the Animation Quality rubric category for motion reasons rather than character reasons?
+
+**Temporal conditioning upgrade path (if needed):**
+Condition each frame on the previous frame's token sequence plus the shared DNA. This stays fully within the discrete palette-index token architecture. Only implement if frame-independent generation demonstrably fails motion quality rubric criteria.
+
+Do not build temporal conditioning speculatively.
 
 ### 4.1 What DNA Is
 
@@ -333,7 +403,39 @@ Treated identically to UI generation — curated options presented, selection ma
 
 ---
 
-### 5.6 Mode 6 — Battle Effect Animations
+### 5.5b Prompt Expansion Layer (Optional — Character Modes Only)
+
+The Prompt Expansion Layer is an optional step available in all character and NPC creation flows (Modes 1 and sheet extension requests). It converts a short description into a fully detailed character brief before generation begins.
+
+**Problem it solves:**
+A user who types "old wizard" gives the generation engine minimal guidance. The model fills gaps with statistical defaults — generic output that lacks the specific personality and visual anchors that make pixel art characters memorable.
+
+**User flow:**
+1. User opens New Character, types a short description: *"old wizard"*
+2. User clicks **Expand** button (or types `/expand`) in the chat input
+3. System sends the description to a language model with a structured expansion prompt
+4. Expanded brief is returned and displayed in an editable text area, pre-filling the DNA brief fields:
+   - `personality`, `role`, `defining_trait`
+   - Visual anchors: clothing, accessories, color associations, posture, expression
+5. User edits the expansion freely before confirming — it is a suggestion, not a decision
+6. Confirmed expansion becomes the brief that feeds generation
+
+**Example:**
+Input: *"old wizard"*
+
+Output: *An elderly male wizard, deeply stooped from decades hunched over spell books. Long silver beard with a slight yellow tinge at the tips. Midnight blue pointed robe, fraying at the hem, faded gold star embroidery barely visible. Worn leather belt with a cracked potion vial glowing amber at the hip. Skeletal hands with prominent knuckles, ink-stained fingertips. Deep-set eyes under heavy brows — wise but perpetually exhausted. Gnarled oak staff, twisted asymmetrically, topped with a cloudy crystal that pulses faintly.*
+
+**Style bible guardrails (REFINEMENT-002A):**
+The expansion system prompt must explicitly forbid anachronistic and non-SNES-appropriate details. Without this, expansion models drift toward modern aesthetics — glowing neon, cyberpunk elements, gradients, hyper-detail — that are incompatible with the style bible and produce unworkable generation inputs. The expansion prompt must include negative constraints: no glowing effects, no gradients, no modern materials, no sub-pixel detail that couldn't survive at 1× scale, palette color count awareness. Descriptions must represent characters a SNES-era studio could have actually shipped.
+
+**Implementation:**
+- Standard language model API call with structured system prompt
+- System prompt is aware of the project's active genre and style bible
+- The expansion button is visible in the chat input area only when in character/NPC creation mode
+- Freeform Mode 7 does not use the expansion layer
+- Built during Phase 7 — not required for Practice Gauntlet
+
+---
 
 Battle effects are animated sprite sequences used in combat — spell animations, hit impacts, status inflictions, healing glows, summon sequences, death particles. They are completely absent from standard character and tileset pipelines and require their own mode.
 
@@ -404,6 +506,8 @@ Freeform mode is the escape hatch from the entire DNA, style bible, and SNES con
 - Freeform outputs cannot be promoted to project assets without going through Mode 1 character creation to extract proper DNA
 
 ---
+
+## 6. Project Organization
 
 ### 6.1 Tab Structure
 
@@ -693,11 +797,11 @@ Additional style models unlock after hitting 99/100 production threshold in curr
 
 ---
 
-## 14. User-Facing Web Interface
+## 13. User-Facing Web Interface
 
 AM Pixel is operated through a local web UI served by FastAPI. This is not optional — it is a required deliverable. A solo developer cannot be expected to run Python scripts in a terminal to approve sprites. The web UI is the product's face.
 
-### 14.1 Requirements
+### 13.1 Requirements
 
 **Chat panel:**
 Natural language input for all generation requests. Supports all seven modes. Mode is auto-detected from context or selectable via tab. Conversation history maintained per session.
@@ -722,7 +826,7 @@ Read-only view of `CONTINUITY_MANIFEST.md` rendered as a visual table. Shows all
 **Hardware status bar:**
 Persistent display of: GPU VRAM usage, current phase, training status, disk usage. Alerts if any resource approaches limits.
 
-### 14.2 Technical Implementation
+### 13.2 Technical Implementation
 
 - **Server:** FastAPI serving both the inference API and the web UI
 - **Frontend:** Single-page HTML/JS application — no external framework dependencies required; keep it simple and functional
@@ -732,16 +836,23 @@ Persistent display of: GPU VRAM usage, current phase, training status, disk usag
 - **Local only:** Web UI serves on localhost only (127.0.0.1) — never exposed to external network in local mode
 - **Server mode:** In production deployment, UI is replaced by a proper client application calling the server-side inference API
 
-### 14.3 Build Priority
+### 13.3 Build Priority
 
 The web UI skeleton (working chat panel + image preview + approve/reject controls) must be complete and functional before the Practice Gauntlet begins. OpenClaw cannot validate the approval workflow without a working UI to validate it through.
 
 ---
 
-## 15. Technical Stack
+## 14. Technical Stack
 
-- **Model:** Custom PyTorch transformer, CUDA training
-- **Hardware:** NVIDIA GPU, minimum 10GB VRAM (CUDA required). If local GPU is insufficient for training, use cloud GPU rental (RunPod, Vast.ai, Lambda Labs) for training runs only — inference can run on lower VRAM.
+- **Model:** Custom PyTorch transformer, universal hardware support via PyTorch device abstraction
+- **Hardware:** Universal — detected automatically at startup via . Detection hierarchy:
+  1. NVIDIA GPU → CUDA (fastest; preferred for training)
+  2. AMD GPU → ROCm (PyTorch-supported; near-equivalent performance)
+  3. Apple Silicon → MPS — Metal Performance Shaders (PyTorch M1/M2/M3 support)
+  4. Other GPU → OpenCL via PyTorch extensions
+  5. No GPU → CPU (inference is usable; training is slow but functional — plan for hours not minutes)
+  - Cloud GPU rental (RunPod, Vast.ai, Lambda Labs) recommended for CPU-only machines doing training runs
+  - All device references in code route through the detection utility — no hardcoded  strings anywhere
 - **Image tooling:** Pillow for pixel-level manipulation and validation
 - **Sheet management:** Custom Python tools using layout manifests
 - **Project state:** JSON manifests + Markdown human-readable files
@@ -752,4 +863,4 @@ The web UI skeleton (working chat panel + image preview + approve/reject control
 
 ---
 
-*AM Pixel Specification v1.1 | Absentmind Studio*
+*AM Pixel Specification v1.2 | Absentmind Studio*
