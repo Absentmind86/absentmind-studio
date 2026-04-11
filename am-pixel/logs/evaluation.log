@@ -1,0 +1,6 @@
+# evaluation.log
+# Evaluation engine accuracy tracking.
+# Records how well the evaluation engine's scores align with human judgment.
+
+| Date | Test Type | Engine Score | Human Score | Delta | Notes |
+|------|-----------|--------------|-------------|-------|-------|
