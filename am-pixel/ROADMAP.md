@@ -1,5 +1,5 @@
 # AM Pixel — Execution Roadmap
-**Absentmind Studio | Version 1.2**
+**Absentmind Studio | Version 1.4**
 
 ---
 
@@ -42,6 +42,11 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Install all required Python dependencies — log versions
 - [ ] Verify disk space — minimum 100GB available for training data and model checkpoints
 - [ ] Build all required tooling scripts (palette_validator, dna_diff, rubric_scorer, sheet_manager, seam_validator, layer_compositor, effect_timing_evaluator, icon_grammar_checker, etc.)
+- [ ] Initialize `tools/vlm_critic.py` stub — documented interface only, not implemented (CHANGE-021)
+- [ ] Initialize `data/pipeline/pose_extractor.py` stub — documented interface only, not implemented (CHANGE-015)
+- [ ] Initialize `model/architecture/COMPONENT_COMPOSITING_NOTES.md` — post-MVP architecture reference (CHANGE-022)
+- [ ] Initialize `data/TRAINING_PROVENANCE_MANIFEST.json` as empty array `[]` — immutable legal ledger, never deleted (CHANGE-023)
+- [ ] Initialize `data/golden/` directory and `data/golden/CONTRIBUTORS.md` placeholder
 - [ ] Audit all training and inference scripts — confirm zero hardcoded `"cuda"` strings; all device references must route through `model/hardware/detector.py`
 - [ ] Create `pipeline/modes/mode7_freeform.py` stub with documented interface
 - [ ] Initialize `ui/` directory — build working web UI skeleton: chat panel, 1×/4× image preview, approve/reject/adjust controls, project tabs, freeform tab. Must be functional before Phase 5.
@@ -56,6 +61,10 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] All tooling scripts pass validation tests
 - [ ] Full folder structure exists and is committed
 - [ ] `mode7_freeform.py` stub exists and is committed
+- [ ] `vlm_critic.py` stub exists and is committed
+- [ ] `pose_extractor.py` stub exists and is committed
+- [ ] `COMPONENT_COMPOSITING_NOTES.md` stub exists and is committed
+- [ ] `data/TRAINING_PROVENANCE_MANIFEST.json` initialized as empty array and committed
 - [ ] Web UI skeleton is running on localhost — chat panel, preview, and approve/reject are functional
 - [ ] All log placeholder files initialized and committed
 - [ ] No Phase 0 tasks remain incomplete
@@ -129,11 +138,21 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 ## Phase 3 — Training Data Pipeline
 *Curate corpus and prepare model training data*
 
+**⚠️ Time allocation warning (CHANGE-019):** Phase 3 requires approximately 3× the time of the original estimate. The Golden Dataset (Tier 1) is the primary deliverable and requires manual human curation that cannot be automated or rushed. Do not treat it as a cleanup pass after scraping. It is the most important work in this phase.
+
 ### Tasks
+
+**Provenance manifest (CHANGE-023) — initialize before collecting any data:**
+- [ ] Confirm `data/TRAINING_PROVENANCE_MANIFEST.json` exists (initialized in Phase 0)
+- [ ] Confirm `data/pipeline/scraper.py` writes a provenance entry for every sprite before writing it to the corpus — provenance is recorded at ingestion, not retroactively
+- [ ] No sprite enters any training tier without a complete manifest entry
+
+**Tier 2 — Broad Corpus:**
 - [ ] Build training data scraper and downloader
   - Prioritize: OpenGameArt.org, itch.io free packs, permissively licensed archives
   - Respect explicit scraping blocks on any site
-  - Log every source with URL and license status
+  - Log every source with URL and license status in `data/scraper/sources.md`
+  - Only accept CC0, CC-BY, CC-BY-SA licenses — reject CC-BY-NC, CC-BY-ND, unknown
 - [ ] Build sprite extraction pipeline
   - Extract individual sprites from sprite sheets
   - Convert to indexed palette format
@@ -142,26 +161,45 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Build palette indexing pipeline
   - Convert each sprite to palette-index sequence format
   - Pair each sequence with structured metadata (dimensions, genre, platform, quality estimate)
-- [ ] Curate training corpus
-  - Run initial quality filter — remove low-quality sprites
-  - Minimum corpus target: 50,000 sprite sequences
-  - Log corpus statistics: total sprites, by platform, by genre, by quality tier
-- [ ] Build anti-pattern dataset
-  - Programmatically generate 500+ intentionally bad sprites using rule violations
-  - Pair with corrected versions and labeled failure modes
-  - Used for evaluation engine calibration
-- [ ] Apply structure-aware token ordering to all sequences
-  - Classify every pixel in every training sprite into five categories: transparent, outline, fill, shade, detail
-  - Reorder token sequences: transparent first, then outline, fill, shade, detail
-  - Preserve original (x, y) positional encodings alongside reordered sequences
-  - Log distribution of all five pixel categories across the full corpus
-  - Flag any category below 3% representation for review before proceeding
+- [ ] Curate broad corpus — target 30,000–50,000 sprite sequences after filtering
+- [ ] Log corpus statistics in `data/corpus_stats.md`: total sprites, by tier, by platform, by genre, by quality tier
+
+**Tier 1 — Golden Dataset (primary quality signal — most important task in Phase 3):**
+- [ ] Manually review and curate a Golden Dataset of 3,000–5,000 sprites
+  - Every sprite individually verified: correctly extracted, SNES-aesthetic compliant, correctly palette-indexed, free of pillow shading and banding
+  - Preferred sources: commissioned sprites, community-contributed CC0 sprites, highest-quality subset of Tier 2 scrape
+  - Store in `data/golden/`
+  - Record every sprite in `data/golden/CONTRIBUTORS.md` with source and reviewer notes
+- [ ] Golden Dataset provenance entries recorded in `data/TRAINING_PROVENANCE_MANIFEST.json` with `"tier": 1`
+
+**Paired-view detection (CHANGE-017):**
+- [ ] Build `data/pipeline/view_pair_detector.py` — identifies candidate view pairs within sprite sheets using palette similarity and proportion matching
+- [ ] Build `data/pipeline/pair_annotator.py` — presents candidates for human confirmation, writes confirmed pairs with `view_pair_id` and direction labels
+- [ ] Run view pair detection across both tiers — confirm minimum 20% of training examples are paired-view sequences
+- [ ] Synthetic pairs (simple reflections) may supplement confirmed pairs — label separately with lower training weight
+
+**Structure-aware token ordering (CHANGE-001, CHANGE-014):**
+- [ ] Apply four-category pixel classification to all sequences (transparent, outline, structural, non-structural)
+  - Note: four categories for Tier 2, `--full-five-category` flag may be used for Tier 1 Golden Dataset where data quality is controlled
+- [ ] Reorder token sequences: transparent → outline → structural → non-structural
+- [ ] Preserve original (x, y) canvas coordinates alongside each reordered token — output format is `(palette_index, canvas_x, canvas_y)` tuples
+- [ ] Log distribution of all four pixel categories across the full corpus
+- [ ] Flag any category below 3% representation for review before proceeding
+
+**Anti-pattern dataset:**
+- [ ] Programmatically generate 500+ intentionally bad sprites using rule violations
+- [ ] Pair with corrected versions and labeled failure modes
+- [ ] Used for evaluation engine calibration
+
 - [ ] Split corpus: 90% training, 10% validation
 
 ### Completion Gate
-- [ ] Corpus contains 50,000+ sprite sequences in palette-index format
-- [ ] All sequences stored in structure-aware order: transparent → outline → fill → shade → detail
-- [ ] Pixel category distribution logged — no category is below 3% of total tokens across corpus
+- [ ] Tier 1 Golden Dataset contains minimum 3,000 manually curated and verified sprites in `data/golden/`
+- [ ] Tier 2 broad corpus contains 30,000+ sprite sequences in palette-index format
+- [ ] `data/TRAINING_PROVENANCE_MANIFEST.json` contains an entry for every sprite in both tiers — zero sprites without a manifest entry
+- [ ] All sequences stored in structure-aware order with `(palette_index, canvas_x, canvas_y)` tuples
+- [ ] Pixel category distribution logged — no category below 3% of total tokens
+- [ ] Minimum 20% of training examples are paired-view sequences — documented in `data/corpus_stats.md`
 - [ ] Anti-pattern dataset contains 500+ labeled examples
 - [ ] Train/validation split documented
 - [ ] Data pipeline scripts tested and validated on sample batches
@@ -179,6 +217,7 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
   - Output: next palette index token
   - Sequence length: max sprite width × height (target: 64×64 = 4096)
   - Vocabulary: palette indices (256 max, typically 15 per character)
+  - **2D positional encodings required** — each token embedding sums palette index embedding + learned X coordinate embedding + learned Y coordinate embedding. No 1D sequence positional encoding as primary spatial signal. See SPEC.md §3.1 CHANGE-010.
 - [ ] Implement DNA conditioning system
   - Structured DNA JSON → conditioning token encoding
   - Conditioning collapses valid token vocabulary to character palette
@@ -187,13 +226,14 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
   - Validation loss tracking
   - Checkpoint saving every N steps
   - Early stopping on validation plateau
-- [ ] Run initial training on full corpus
+- [ ] **Write `model/architecture/IMPLEMENTATION_NOTES.md`** documenting every implementation decision in the architecture files: how 2D positional encodings are implemented, how DNA conditioning tokens are handled, how the causal mask interacts with structure-aware token ordering. **HALT and flag for human review before running any training. Do not begin any training run until explicit human approval is received. (CHANGE-020)**
+- [ ] Run initial training on full corpus (after human architecture review approval)
   - Log training loss curve
   - Log validation loss curve
   - Save checkpoints at regular intervals
 - [ ] Evaluate initial model
   - Generate 100 test sprites from DNA conditioning
-  - Score all 100 against rubric
+  - Score all 100 against rubric automated gate (85pts)
   - Log pass rate and failure mode distribution
 - [ ] Run structure-aware ordering experiment
   - Train a parallel model on identical corpus in raster order
@@ -207,16 +247,19 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
   - Generate 20 battle sprites (48×64 minimum)
   - Run `dna_diff.py` separately on top half vs bottom half of each sprite
   - Log the consistency delta — if bottom half is >10% lower than top half consistently, flag for Phase 6 cross-attention upgrade
+- [ ] **Optional MaskGIT speed evaluation (CHANGE-011):** If generating the 100-sprite evaluation batch takes longer than 4 hours wall-clock time on available hardware, document the bottleneck and evaluate MaskGIT as an alternative architecture before proceeding to Phase 5. This gate is only triggered if speed is a demonstrated practical blocker — not a theoretical concern. Speed is not a primary project concern; accuracy is. See README.md On Speed vs. Accuracy.
 
 ### Completion Gate
+- [ ] `model/architecture/IMPLEMENTATION_NOTES.md` written and human architecture review approval received — no training began before this
 - [ ] Model trains without errors to convergence
 - [ ] Validation loss below target threshold (defined during training)
-- [ ] Initial evaluation: minimum 50/100 sprites passing rubric (baseline — model is not good yet, this just proves it's functional)
+- [ ] Initial evaluation: minimum 50/100 sprites passing automated rubric gate (85pts — baseline, proves model is functional)
 - [ ] Structure-aware vs raster ordering comparison documented in `logs/training_log.md`
 - [ ] Sequence length evaluation completed — pass rates for <1,500 tokens and >1,500 tokens logged separately
 - [ ] DNA conditioning consistency measured — top-half vs bottom-half delta logged for 20 battle sprites
 - [ ] If sequences >1,500 tokens pass rate < 70%: DO NOT advance to Phase 5. Implement hierarchical generation and re-train. Document decision in `logs/phase_gates.md`.
 - [ ] If bottom-half DNA consistency is >10% lower than top-half: document as Phase 6 priority — upgrade to cross-attention conditioning
+- [ ] If batch generation exceeded 4 hours wall-clock: MaskGIT evaluation documented before proceeding
 - [ ] Git commit: `"Phase 4 complete: Initial model trained"`
 
 ---
@@ -387,4 +430,63 @@ Do not silently fail. Do not work around a fundamental problem without documenti
 
 ---
 
-*AM Pixel Execution Roadmap v1.2 | Absentmind Studio*
+*AM Pixel Execution Roadmap v1.4 | Absentmind Studio*
+
+---
+
+## Changelog
+
+### v1.3 — 2026-04-12
+- **CHANGE-019:** Phase 3 completely rewritten with two-tier corpus strategy. 3× time allocation warning added — manual curation cannot be automated or rushed. Tier 1 Golden Dataset (3,000–5,000 sprites, manually verified) established as primary Phase 3 deliverable. Tier 2 broad corpus (30,000–50,000) for volume training. Provenance manifest required before any data collection begins.
+- **CHANGE-017:** Phase 3 Tasks — added view_pair_detector.py and pair_annotator.py tasks; minimum 20% paired-view sequence target; synthetic pairs (reflections) permitted at lower training weight; teaches model view rotation geometry implicitly.
+- **CHANGE-023:** Phase 0 Tasks — TRAINING_PROVENANCE_MANIFEST.json initialized as empty array; Phase 3 gate — manifest entry required for every sprite before ingestion, zero sprites without entry.
+- **CHANGE-014:** Phase 3 — pixel classifier updated to four categories in task description; (palette_index, canvas_x, canvas_y) output tuple format noted.
+- **CHANGE-010:** Phase 4 Tasks — 2D positional encoding requirement added explicitly to transformer implementation task; note that 1D encodings are architecturally incompatible with structure-aware ordering.
+- **CHANGE-020:** Phase 4 Tasks — mandatory architecture review gate added. OpenClaw must write IMPLEMENTATION_NOTES.md documenting every decision in model/architecture/ files (2D positional encodings, DNA conditioning, causal mask), halt, and await explicit human approval before any training run begins.
+- **CHANGE-011:** Phase 4 Tasks — optional MaskGIT speed evaluation gate added; triggered only if batch generation exceeds 4 hours wall-clock time; speed is not a primary concern, only triggered as practical blocker.
+- **CHANGE-015/021/022:** Phase 0 Tasks — stub initialization tasks added for pose_extractor.py, vlm_critic.py, COMPONENT_COMPOSITING_NOTES.md; all added to Phase 0 completion gate.
+- Phase 4 completion gate updated to reflect 85-point automated rubric gate (not 95) for unattended batch evaluation.
+- **CHANGE-018:** Changelog section added.
+
+### v1.4 — 2026-04-19
+- Bible **v1.4**: per Document Hygiene Rules, all Bible documents incremented together; canonical tree after `bible-v1.3-apr13` is **`bible-v1.4`** (no additional roadmap task delta in this entry).
+
+### v1.2 — 2026-04-11
+- **CHANGE-003:** Phase 0 Tasks — replaced CUDA-only GPU verification with universal hardware detection via detector.py; log backend to hardware.log; proceed on any tier. Added task to audit all scripts for hardcoded "cuda" strings (zero permitted). Added log placeholder file initialization task.
+- Phase 0 Completion Gate — replaced "GPU confirmed with CUDA" with hardware detection logged gate; added zero hardcoded "cuda" strings gate; added log placeholder files initialized gate.
+- **CHANGE-001:** Phase 3 Tasks — added structure-aware token ordering: pixel_classifier.py classification step, sequence_reorderer.py reordering step, (x,y) positional encoding preservation, category distribution logging, 3% floor flag.
+- Phase 3 Completion Gate — added structure-aware ordering gate; added pixel category distribution gate (no category below 3%).
+- **CHANGE-007:** Phase 4 Tasks — added sequence length risk evaluation: generate 50 sprites across size range, measure pass rates separately for <1,500 and >1,500 tokens, HALT gate if >1,500 token rate < 70%.
+- **CHANGE-001:** Phase 4 Tasks — added structure-aware vs raster ordering comparison experiment; document result in training_log.md, keep whichever performs better.
+- **CHANGE-008:** Phase 4 Tasks — added DNA conditioning consistency measurement: 20 battle sprites, top-half vs bottom-half dna_diff.py comparison, flag for Phase 6 cross-attention upgrade if delta > 10%.
+- Phase 4 Completion Gate — added all three experiment gate criteria with explicit HALT conditions.
+- Phase 7 Tasks — updated "five generation modes" to "seven generation modes."
+- **CHANGE-002:** Phase 7 Tasks — added prompt expansion layer (Mode 5b) implementation task with SNES guardrails requirement.
+- **CHANGE-009:** Phase 7 Tasks — added temporal coherence evaluation task: generate 5 walk cycles, score Animation Quality for motion quality specifically, implement temporal frame conditioning if motion failures are consistent.
+- Phase 7 Completion Gate — added prompt expansion functional gate; added temporal coherence evaluated gate; updated sample project to include parallax background and battle effects.
+
+### v1.1 — 2026-04-11
+- Phase 0 Tasks: Added mode7_freeform.py stub creation as required task.
+- Phase 0 Tasks: Added ui/ directory initialization with web UI skeleton (chat panel, 1×/4× preview, approve/reject/adjust, project tabs, freeform tab) — must be functional before Phase 5.
+- Phase 0 Completion Gate: Added mode7_freeform.py stub gate criterion.
+- Phase 0 Completion Gate: Added web UI skeleton functional gate criterion.
+- Phase 5 Tasks: Added 5 freeform Mode 7 test generations — validate DNA/style constraints bypassed, outputs isolated to assets/freeform/, continuity manifest not updated.
+- Phase 5 Tasks: Added full web UI approval workflow end-to-end validation — generate, preview, approve, confirm commit; test reject + adjustment cycle; confirm freeform tab independent.
+- Phase 5 Completion Gate: Added Mode 7 freeform isolation gate.
+- Phase 5 Completion Gate: Added web UI workflow validation gate.
+- Added ⚠️ CRITICAL DEFINITION section at top of document — mirrors SPEC.md threshold fix (95/100 = individual score, 99/100 = batch pass rate with concrete examples).
+
+### v1.0 — Original Release
+- Phases 0–10 defined: initialization through server infrastructure.
+- Phase 0: CUDA-only hardware verification with halt condition if CUDA not found.
+- Phase 1: Boot Training knowledge base with 6 completion gate criteria.
+- Phase 2: Style Bible lockdown.
+- Phase 3: Training data pipeline (50,000+ corpus target).
+- Phase 4: Model architecture and initial training.
+- Phase 5: Practice Gauntlet (10 characters, minimum 3 rebuild cycles).
+- Phase 6: Quality fine-tuning (80/100 target).
+- Phase 7: Production pipeline integration (5 modes at this version).
+- Phase 8: Genre 1A production threshold (99/100 batch gate).
+- Phase 9+: Progressive genre expansion following GENRE_TAXONOMY.md tier structure.
+- Phase 10: Server infrastructure (deferred until Genre 1A met).
+- Escalation protocol: 48-hour blocker documentation and human flag requirement.

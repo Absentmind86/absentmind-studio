@@ -1,4 +1,4 @@
-# AM Pixel — v1.3
+# AM Pixel — v1.4
 **Absentmind Studio — AI Sprite Generator & Game Asset Manager**
 
 This folder contains the complete specification and execution documents for AM Pixel. If you are OpenClaw, read these documents in the order listed before doing anything else.
@@ -14,6 +14,9 @@ This folder contains the complete specification and execution documents for AM P
 | [GENRE_TAXONOMY.md](GENRE_TAXONOMY.md) | Genre tiers, mastery definitions, progression rules | 3rd |
 | [FOLDER_STRUCTURE.md](FOLDER_STRUCTURE.md) | Exact file and directory structure initialized in Phase 0 | 4th |
 | [OPENCLAW_PROMPT.md](OPENCLAW_PROMPT.md) | The initialization prompt — contains confirmation requirements and non-negotiable rules | Already held |
+| [BIBLE_CHANGELOG.md](BIBLE_CHANGELOG.md) | Authoritative per-document history and Bible hygiene rules — use when tracing what changed and why | After core set |
+| [PROPOSED_CHANGES_001.md](PROPOSED_CHANGES_001.md) | Series 001 — fully implemented; kept as archive reference | Reference |
+| [PROPOSED_CHANGES_002.md](PROPOSED_CHANGES_002.md) | Series 002 — staging for the next Bible revision (not yet merged) | Reference |
 
 ---
 
@@ -94,6 +97,13 @@ If AI reviewers, advisors, or future contributors raise generation speed as a co
 ---
 
 ## Changelog
+
+### v1.4 — 2026-04-19
+- Bible **v1.4**: per Document Hygiene Rules, canonical post-`bible-v1.3-apr13` revision is no longer labeled v1.3; all Bible documents and umbrella README set to **1.4**; archive folder **`bible-v1.4`**
+- Document index: added `BIBLE_CHANGELOG.md`, `PROPOSED_CHANGES_001.md`, and `PROPOSED_CHANGES_002.md` to the hub table (meta and staging docs were previously only implied)
+
+### v1.3 — 2026-04-19
+- Hygiene only: repo root `README.md` added for AM Studio umbrella; archive snapshot folders renamed (`bible-v1.1` … `bible-v1.3-latest`); `SPEC.md` and this hub both verified at Bible **v1.3** in the working tree (no AM Pixel technical content change in this entry)
 
 ### v1.3 — 2026-04-11
 - Added On Speed vs. Accuracy design position statement — explicit documented response to recurring speed concern from external reviewers; OpenClaw directive included

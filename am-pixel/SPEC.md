@@ -1,5 +1,5 @@
 # AM Pixel — Full Technical Specification
-**Absentmind Studio | Version 1.2**
+**Absentmind Studio | Version 1.4**
 
 ---
 
@@ -67,6 +67,7 @@ The model is conditioned on structured DNA specifications at generation time. DN
 - Conditioning: structured DNA JSON prepended as context tokens
 - Training objective: next-token prediction on palette-index sequences
 - Hardware target: Universal — detected automatically at startup. See Section 14 Technical Stack for detection hierarchy.
+- **Positional encoding: 2D, not 1D.** Each token receives two independent learned embeddings — one for canvas X coordinate, one for canvas Y coordinate — summed at the input layer. Standard 1D sequence positional encoding is not used as the primary spatial signal. Because structure-aware token ordering scrambles spatial sequence position, 1D encodings would encode sequence distance rather than canvas proximity. 2D canvas coordinate embeddings give every token its true spatial position regardless of generation order. See CHANGE-010.
 
 ### 3.2 The Training Pipeline
 
@@ -93,19 +94,42 @@ Training sequences are NOT stored in raster order (left-to-right, top-to-bottom)
 4. **Shading pixels fourth** — shadow and highlight ramps applied to base fills
 5. **Detail pixels last** — small features, accessories, face details
 
-Positional encodings preserve the original (x, y) canvas coordinates so the model can reconstruct spatial position regardless of generation order. The transformer architecture itself is unchanged — only the ordering of training sequences changes. At inference time, the model generates in the same learned order.
+Positional encodings preserve the original (x, y) canvas coordinates so the model can reconstruct spatial position regardless of generation order. See §3.1 for the 2D positional encoding implementation. The transformer architecture itself is unchanged — only the ordering of training sequences changes. At inference time, the model generates in the same learned order.
 
-The pixel classification step is rule-based: transparent pixels are those with alpha=0; outline pixels are non-transparent pixels adjacent to transparent pixels; fill pixels are large contiguous single-palette-index regions; shading pixels are non-outline pixels in shadow/highlight ramps; detail pixels are everything remaining.
+**Pixel classification — four categories for foundation training (CHANGE-014):**
+For Stage 1 foundation training, the pixel classifier uses four categories rather than five. The shade/detail boundary is semantically ambiguous in scraped sprite data without understanding the artistic context — a highlight on shiny armor could be classified as either. Inconsistent classification produces inconsistent token ordering, which produces inconsistent training signal. The four-category version is reliable from pixel geometry alone:
 
-**Phase 3 experiment requirement:** Compare structure-aware ordering vs raster ordering on a held-out validation set during Phase 4. If structure-aware ordering does not produce measurable improvement in rubric scores, revert to raster. Document the comparison in `logs/training_log.md`.
+1. **Transparent** — alpha = 0
+2. **Outline** — non-transparent pixels adjacent to transparent pixels
+3. **Structural** — large contiguous regions of a single palette index
+4. **Non-structural** — everything else (captures shade and detail combined)
 
-**Training data sourcing priority:**
-1. Permissively licensed sprite archives (OpenGameArt.org, itch.io free packs)
-2. Community-contributed pixel art repositories
-3. Broader sprite corpus from public archives
-4. Approved production assets from AM Pixel users (opt-in, anonymized)
+For Stage 2 quality fine-tuning, the full five-category classification may be applied to the curated Golden Dataset where data quality is controlled and output can be human-verified. The `--full-five-category` flag in `pixel_classifier.py` enables this; it is disabled by default.
 
-The data pipeline must log the distribution of all five pixel categories (transparent, outline, fill, shade, detail) across the training corpus. If any category is severely underrepresented, this will cause generation failures and must be caught during Phase 3 before training begins.
+**Phase 4 experiment requirement:** Compare structure-aware ordering vs raster ordering on a held-out validation set during Phase 4. If structure-aware ordering does not produce measurable improvement in rubric scores, revert to raster. Document the comparison in `logs/training_log.md`.
+
+The data pipeline must log the distribution of all four pixel categories across the training corpus. If any category is severely underrepresented, this will cause generation failures and must be caught during Phase 3 before training begins.
+
+**Two-tier corpus strategy (CHANGE-019):**
+The training corpus is divided into two tiers with different quality standards and different roles in the training pipeline.
+
+**Tier 1 — Golden Dataset (primary quality signal):**
+A manually curated set of 3,000–5,000 sprites, individually verified to be correctly extracted, SNES-aesthetic compliant, correctly palette-indexed, and free of pillow shading and banding. Every sprite in this set has been human-reviewed. This is the most important work in Phase 3. It is not a cleanup pass after scraping — it is the primary Phase 3 deliverable. Building it is slow and cannot be rushed. Commissioned sprites and community-contributed CC0 sprites (see CHANGE-024) are preferred sources over scraped sprites for this tier. Golden Dataset sprites are stored in `data/golden/`.
+
+**Tier 2 — Broad Corpus (volume and variety):**
+Algorithmically scraped and filtered sprites, target 30,000–50,000. Quality is lower and inconsistent. Used for Stage 1 foundation training to give the model exposure to variety. Stored in `data/corpus/train/` and `data/corpus/validation/`.
+
+Training strategy: pre-train on Tier 2 (broad exposure), fine-tune on Tier 1 (quality signal). Stage 1 = Tier 2 corpus. Stage 2 = Tier 1 corpus.
+
+**Paired-view training sequences (CHANGE-017):**
+Many sprite sheets contain the same character from multiple directions — standard for RPG walk cycles. The data pipeline must actively identify and preserve these view pairs rather than treating each direction as an independent sprite. Confirmed pairs are stored with a `view_pair_id` linking them and are used in a higher-weight training sequence format:
+
+`[DNA] + [Brief] + [View A Tokens]` → `[View B Tokens]`
+
+This teaches the model view rotation geometry implicitly — that a nose disappears as the face rotates, that shoulder width contracts in side view, that occluded features emerge when the angle changes. Target: minimum 20% of training examples should be paired-view sequences. Synthetic pairs (simple reflections) may supplement confirmed pairs but are labeled separately with lower training weight.
+
+**Training data provenance (CHANGE-023):**
+Every sprite entering the training pipeline must have a corresponding entry in `data/TRAINING_PROVENANCE_MANIFEST.json` before it is used for training. This manifest is the legal record of what the model was trained on. It is never deleted. See §15 Training Data Provenance and CHANGE-023 for the full legal rationale.
 
 ### 3.3 System Components
 
@@ -173,11 +197,35 @@ Condition each frame on the previous frame's token sequence plus the shared DNA.
 
 Do not build temporal conditioning speculatively.
 
+**Skeletal pose tokens — secondary upgrade path (CHANGE-015):**
+If raw-token temporal conditioning produces stiff or copy-prone animation (the model copies rather than transforms), the next step is skeletal pose token conditioning. A lightweight rule-based script extracts a simplified 2D skeleton from each frame — center of mass of head, torso, and approximate limb endpoints (~10–12 key points for a battle sprite). Frame 2 is then conditioned on DNA + Brief + Frame 1 skeleton tokens (not raw pixel tokens). Skeleton tokens are ~10–12 tokens vs 384–3,072 raw pixel tokens, dramatically reducing context length and giving the model an explicit motion representation rather than forcing it to infer motion from pixel deltas. A stub `data/pipeline/pose_extractor.py` is initialized in Phase 0. Only implement if raw-token conditioning demonstrably fails.
+
+---
+
+**Risk D — 2D Positional Encoding Implementation (CHANGE-010)**
+
+Structure-aware token ordering scrambles the spatial sequence position of tokens. Standard 1D positional encodings (sinusoidal or RoPE) encode position in the token sequence, not position on the canvas. A token at sequence position 1 (transparent, canvas 0,0) and a token at sequence position 847 (outline, canvas 15,5) may be spatially adjacent but will appear far apart to a 1D positional encoder — forcing the model to learn spatial relationships indirectly from sequence distance. This degrades spatial coherence, potentially undermining the benefit of structure-aware ordering entirely.
+
+**Implementation requirement:**
+Use 2D positional encodings as specified in §3.1. Each token's embedding is the sum of three components: palette index embedding + learned X coordinate embedding + learned Y coordinate embedding. The embedding lookup tables for X and Y coordinates are trained, not fixed sinusoidal. DNA conditioning tokens do not carry canvas coordinates — they use a separate learned embedding type to distinguish them from sprite tokens.
+
+`data/pipeline/sequence_reorderer.py` must output `(palette_index, canvas_x, canvas_y)` tuples, not bare palette indices. The transformer input layer consumes all three values per token.
+
+This is not optional. Building the transformer with 1D positional encodings and structure-aware ordering is an architectural contradiction that will produce worse results than raster ordering with 1D encodings.
+
+---
+
+**Note on MaskGIT (CHANGE-011):**
+Masked Generative Transformers (MaskGIT) have been raised by multiple reviewers as an alternative to autoregressive generation — primarily for inference speed. This project does not optimize for speed. Accuracy is the priority. MaskGIT is documented in PROPOSED_CHANGES_002 as a Phase 4 optional experiment: if batch generation time becomes a demonstrated practical blocker (not a theoretical concern), evaluate MaskGIT at that point. Do not switch architectures speculatively. See README.md — On Speed vs. Accuracy.
+
 ### 4.1 What DNA Is
 
 Character DNA is the complete, exact, pixel-level specification of an approved character. It is extracted from the approved master sprite the moment a character design is confirmed. It is permanent — changes require a formal re-approval process and regeneration of all derived sprites.
 
 DNA is not a description of what the character looks like. It is a technical blueprint from which any future sprite of this character can be generated exactly — today or three years from now.
+
+**DNA encodes what is visible. The Brief encodes what exists.**
+DNA extraction is pixel-based — it can only record features present in the master sprite. Any feature occluded in the master view (a backpack hidden behind the body, a ponytail hidden under a hood, a rear armor plate, a tail) will not appear in the DNA. These features must be recorded in the `brief.occluded_features` field and will be used as conditioning input when generating non-master views. See §4.3 and §5.1 for how this affects multi-view generation.
 
 ### 4.2 DNA Schema
 
@@ -190,7 +238,8 @@ DNA is not a description of what the character looks like. It is a technical blu
   "brief": {
     "personality": "Cheerful and rotund, always wiping hands on apron",
     "role": "NPC — market vendor",
-    "defining_trait": "Stained apron, gap-toothed smile, bald with fringe"
+    "defining_trait": "Stained apron, gap-toothed smile, bald with fringe",
+    "occluded_features": []
   },
   "profiles": {
     "world_sprite": {
@@ -238,11 +287,15 @@ DNA is not a description of what the character looks like. It is a technical blu
 }
 ```
 
+**`occluded_features` field:** An array of plain-language descriptions of every feature that exists on this character but is not visible in the master sprite. This field is the only record of hidden features and is required conditioning input for all non-master view generation. Examples: `"Large iron-frame backpack with bedroll strapped to top"`, `"Long brown ponytail reaching mid-back, tied with red cord"`, `"Rear pauldron with clan sigil on right shoulder blade"`. An empty array is valid for characters with no hidden features.
+
 ### 4.3 DNA Lock Warning
 
 The moment a character design is approved, the system presents:
 
-> *"This design is now the DNA source for ALL future sprites of this character across all profiles. Every animation, every scale variant, every future addition will be generated from this DNA. This cannot be changed without re-approving the base design and regenerating all derived sprites. Confirm lock?"*
+> *"Before locking DNA, confirm that your character brief is complete. The brief must describe ALL features of this character — including features not visible in the current sprite (backpacks, tails, ponytails, rear armor, hidden accessories). The `occluded_features` field is the only record of hidden features. Once DNA is locked, multi-view generation will use the brief to render these features. If the brief is incomplete, those features will not appear in side or rear views.*
+>
+> *This design is now the DNA source for ALL future sprites of this character across all profiles. Every animation, every scale variant, every future addition will be generated from this DNA. This cannot be changed without re-approving the base design and regenerating all derived sprites. Confirm lock?"*
 
 **DNA locking applies to Modes 1 through 6 only.** Mode 7 (Freeform) is explicitly non-DNA. Freeform outputs do not update the continuity manifest, the DNA store, or any project file. They are standalone PNG exports only.
 
@@ -254,10 +307,11 @@ After lock confirmation:
 3. Document outline pixel colors per region
 4. Confirm light source direction from shadow placement
 5. Identify character-unique colors vs master palette colors
-6. Write `CHARACTER_DNA/[character_id].json`
-7. Update `CONTINUITY_MANIFEST.md`
-8. Regenerate project comparison sheet
-9. Git commit: `"DNA locked: [character_name] v1"`
+6. Display extraction summary and prompt: *"Are there any features of this character not visible in this sprite? Add them to occluded_features before locking."*
+7. Write `dna/characters/[character_id].json`
+8. Update `CONTINUITY_MANIFEST.md`
+9. Regenerate project comparison sheet
+10. Git commit: `"DNA locked: [character_name] v1"`
 
 ---
 
@@ -274,7 +328,7 @@ After lock confirmation:
 5. System generates master profile (highest detail) — single forward-facing sprite
 6. Approval loop: present candidate at 1x and 4x zoom → human adjusts or confirms
 7. On confirmation: DNA Lock Warning → extract DNA → generate full master profile sheet
-8. System works down through derived profiles (lower detail, same DNA)
+8. System works down through derived profiles (lower detail, same DNA) — **each non-master profile is generated using twin input: `[DNA] + [Complete Brief including occluded_features] + [Master View Tokens]`. Not DNA alone.** The master view tokens provide visual grounding; the complete brief ensures occluded features (backpacks, ponytails, rear armor) appear in side and rear views where they would be visible.
 9. Each derived profile: generate candidate → confirm reads correctly at scale → generate sheet
 10. Final git commit with all sheets and DNA
 
@@ -302,15 +356,15 @@ Standard battle sprites max at 64x64. Large bosses — those spanning multiple t
 
 **Flow:**
 1. Human requests additional sprites: *"Sam needs a surprised reaction — arms up, eyes wide, 2 frames"*
-2. System loads `CHARACTER_DNA/sam_vendor.json` — does NOT re-derive from sheet image
-3. System loads `SHEET_LAYOUT/sam_vendor_world.json` — identifies empty rows
+2. System loads `dna/characters/sam_vendor.json` — does NOT re-derive from sheet image
+3. System loads `sheets/sam_vendor_world.json` — identifies empty rows
 4. Generates new frames using DNA as sole reference
 5. Places in empty rows only — never modifies existing sprite pixels
 6. Updates sheet layout manifest
 7. Git commit: `"Sam vendor: added surprise animation (2 frames)"`
 
 **Non-destructive guarantee:**
-The system maintains a `SHEET_LAYOUT` manifest per sheet. Occupied cells are locked. New sprites only go into empty cells. If no empty cells exist, sheet is expanded and manifest updated.
+The system maintains a `sheets/` manifest per sheet. Occupied cells are locked. New sprites only go into empty cells. If no empty cells exist, sheet is expanded and manifest updated.
 
 ### 5.3 Mode 3 — Environment, Tileset & Parallax Generation
 
@@ -334,6 +388,13 @@ Before generating a full tileset, the system produces a composed sample scene (~
 
 **Seam Validation:**
 Every tile in the set is tested with `seam_validator.py` before approval. All four edges (top, bottom, left, right) must tile seamlessly with their neighbors. Any tile failing seam validation is rebuilt, not patched.
+
+**Sliding Window Boundary Conditioning (CHANGE-012):**
+Tiles are not generated in isolation. When generating tile at canvas position (x, y), the following are prepended as hard conditioning tokens before the tile sequence begins:
+- Rightmost column of the already-approved left neighbor tile (x-1, y) — 16 tokens for a 16×16 tile
+- Bottom row of the already-approved upper neighbor tile (x, y-1) — 16 tokens for a 16×16 tile
+
+These boundary tokens are ground truth constraints, not generated. The model generates the new tile knowing exactly what palette indices must appear at its left and top edges, making seamless tiling a conditioning constraint rather than a post-hoc validation. Tileset generation must proceed in raster order (left-to-right, top-to-bottom) so neighbor tiles are always available. When a tile fails seam validation, the rebuild includes the same boundary conditioning plus a failure annotation describing the specific failed edge.
 
 **Transition Tiles:**
 Every tileset must include transition tiles — the connecting tiles between different surface types (grass-to-dirt, stone-to-water, road-to-grass). These are explicitly in the tile inventory and evaluated as part of the set, not as an afterthought.
@@ -437,6 +498,8 @@ The expansion system prompt must explicitly forbid anachronistic and non-SNES-ap
 
 ---
 
+### 5.6 Mode 6 — Battle Effect Animations
+
 Battle effects are animated sprite sequences used in combat — spell animations, hit impacts, status inflictions, healing glows, summon sequences, death particles. They are completely absent from standard character and tileset pipelines and require their own mode.
 
 **Why a separate mode:**
@@ -496,7 +559,7 @@ Freeform mode is the escape hatch from the entire DNA, style bible, and SNES con
 3. System generates candidate with full 256-color palette, no DNA conditioning
 4. Candidate presented at 1x and 4x zoom
 5. User approves or requests adjustments — same natural language loop as project modes
-6. On approval: exported as standalone PNG to `assets/freeform/` — no DNA extracted, no manifest updated, no git commit to project state
+6. On approval: exported as standalone PNG to `freeform/` — no DNA extracted, no manifest updated, no git commit to project state
 7. Freeform outputs are logged in `logs/freeform_log.md` for reference only
 
 **Implementation notes:**
@@ -609,11 +672,13 @@ The evaluation engine is the most important component. Weak evaluation produces 
 
 ### 8.2 Rules
 
-- Every sprite evaluated before the human ever sees it
+- Every sprite evaluated by the automated gate before the human ever sees it
+- Automated gate scores 85 hard-math points — a sprite must pass 85/85 to be presented to the human
+- Human scores the remaining 15 points (Originality and Soul/Visual Hierarchy) in the approval UI
+- Combined score must reach 95/100 for final approval — below 95 means rebuild
 - Cannot rationalize a flaw as a stylistic choice
 - Cannot compare to its own earlier work — compares only to best work in reference library
 - No partial credit for effort or complexity
-- Below 95 = full rebuild from silhouette. Not patching.
 - Every rejection documents specific, technical failure points
 - Every pass documents what succeeded — added to `LESSONS_LEARNED.md`
 
@@ -627,15 +692,32 @@ The evaluation engine is the most important component. Weak evaluation produces 
 
 Applies to: all character profiles, NPC sprites, enemy sprites, portrait art, boss sprites, battle effects.
 
-| Category | Points | What Is Evaluated |
-|----------|--------|-------------------|
-| Technical Compliance | 25 | SNES palette limits, tile dimensions, no anti-aliasing, color space |
-| Construction Quality | 25 | Outline technique, shading method, hue-shifted ramps, no banding, no pillow shading |
-| Readability | 20 | Silhouette clarity at 1x, key feature legibility, character distinguishability |
-| Animation Quality | 15 | Weight, timing, frame economy, physicality — evaluated at playback speed |
-| Originality | 10 | Cannot be identified as remix of a specific reference sprite |
-| Soul | 5 | Does the sprite have personality? Memorable after one encounter? |
-| **PASSING THRESHOLD** | **95/100** | **Below 95 = full rebuild** |
+**Tier 1 — Automated Gate (85 points):** Scored by `rubric_scorer.py` and supporting tools. Sprite is not presented to the human until this passes 85/85.
+
+| Category | Points | Evaluated By |
+|----------|--------|--------------|
+| Technical Compliance | 25 | `palette_validator.py`, `anti_aliasing_detector.py` |
+| Construction Quality | 25 | `banding_detector.py`, `outline_checker.py`, `dna_diff.py` |
+| Readability | 20 | Silhouette contrast analysis, pixel-level legibility checks |
+| Animation Quality | 15 | `effect_timing_evaluator.py` (effects); pose consistency check (walk cycles) |
+| **Automated Gate** | **85/85** | **Sprite presented to human only if this passes** |
+
+**Tier 2 — Human Gate (15 points):** Awarded by the human in the approval UI. These criteria require semantic judgment that Python heuristics cannot provide reliably.
+
+| Category | Points | Notes |
+|----------|--------|-------|
+| Originality | 10 | Does this feel fresh or is it a direct copy of a known sprite? |
+| Soul / Visual Hierarchy | 5 | Context-dependent — see below |
+
+**Context-aware Soul scoring (REFINEMENT-013A):**
+Before scoring, the human declares the character's role in the approval UI:
+
+- **Foreground** (player character, named NPC, boss, villain, party member): Soul scored as personality and distinctiveness. 0 = forgettable, 5 = memorable after one encounter.
+- **Background** (generic townsperson, crowd NPC, ambient filler): Criterion renamed **Visual Hierarchy**. Scored as successful visual recession. 0 = competes with foreground characters for attention, 5 = reads clearly as background, never draws the eye away from named characters.
+
+This distinction is intentional design craft. A named character that is forgettable is a failure. A townsperson that is too distinctive is also a failure — it undermines the visual hierarchy that makes named characters stand out. Both extremes are wrong. The role declaration also informs Originality scoring: a generic townsperson is expected to look somewhat generic and should not be penalized for resembling other background characters.
+
+**Combined passing threshold: 95/100.** A sprite scoring 85/85 automated + 10+/15 human passes. Below 95 combined = rebuild.
 
 *For battle effects specifically: Animation Quality weight increases to 25, Construction Quality decreases to 15 — timing and weight are the primary craft criteria for effects.*
 
@@ -685,6 +767,7 @@ The evaluation engine uses visual diff tools — not just abstract scoring:
 - `effect_timing_evaluator.py` — evaluates battle effect animation frame timing and weight at actual playback speed
 - `icon_grammar_checker.py` — validates that icon sets (items, status, elements) share consistent visual grammar within categories
 - `anti_aliasing_detector.py` — flags sub-pixel blending (not allowed in SNES style)
+- `vlm_critic.py` — **upgrade path only (CHANGE-021).** If automated heuristics produce systematic false positives above 10% (e.g., banding detector flags legitimate cylindrical shading, outline checker fails a character wearing a black robe), this tool supplements deterministic checks with a VLM API call for contextually ambiguous cases. Returns structured JSON: `{criterion, pass, violations, confidence}`. Only invoked on borderline cases, not every sprite. Initialized as a stub in Phase 0; implemented in Phase 5 only if false positive rates warrant it.
 
 ### 8.5 Anti-Pattern Library
 
@@ -845,14 +928,14 @@ The web UI skeleton (working chat panel + image preview + approve/reject control
 ## 14. Technical Stack
 
 - **Model:** Custom PyTorch transformer, universal hardware support via PyTorch device abstraction
-- **Hardware:** Universal — detected automatically at startup via . Detection hierarchy:
+- **Hardware:** Universal — detected automatically at startup via `model/hardware/detector.py`. Detection hierarchy:
   1. NVIDIA GPU → CUDA (fastest; preferred for training)
   2. AMD GPU → ROCm (PyTorch-supported; near-equivalent performance)
   3. Apple Silicon → MPS — Metal Performance Shaders (PyTorch M1/M2/M3 support)
   4. Other GPU → OpenCL via PyTorch extensions
   5. No GPU → CPU (inference is usable; training is slow but functional — plan for hours not minutes)
   - Cloud GPU rental (RunPod, Vast.ai, Lambda Labs) recommended for CPU-only machines doing training runs
-  - All device references in code route through the detection utility — no hardcoded  strings anywhere
+  - All device references in code route through the detection utility — no hardcoded `"cuda"` strings anywhere
 - **Image tooling:** Pillow for pixel-level manipulation and validation
 - **Sheet management:** Custom Python tools using layout manifests
 - **Project state:** JSON manifests + Markdown human-readable files
@@ -863,4 +946,103 @@ The web UI skeleton (working chat panel + image preview + approve/reject control
 
 ---
 
-*AM Pixel Specification v1.2 | Absentmind Studio*
+## 15. Training Data Provenance
+
+**`data/TRAINING_PROVENANCE_MANIFEST.json`** is an immutable ledger of every sprite that has entered the training pipeline. It is initialized in Phase 0 and never deleted. Every entry records: sprite ID, source URL, creator, license, license URL, date added, perceptual hash, copyright filter status, and tier (1 = Golden Dataset, 2 = broad corpus).
+
+**This manifest is a legal shield.** If AM Pixel is ever challenged on copyright grounds, the manifest is the evidence that the model was trained exclusively on clean, permissively licensed material. Deleting training data does not retroactively legalize training — it eliminates the defense. See CHANGE-023 for the full legal rationale.
+
+**Acceptable licenses:** CC0, CC-BY (any version), CC-BY-SA (note share-alike obligations), commissioned work-for-hire (copyright explicitly transferred), procedurally generated (post-MVP fine-tuning only). Not acceptable: CC-BY-NC (AM Pixel has commercial tiers), CC-BY-ND (training creates derivatives), unknown license.
+
+A sprite without a manifest entry does not get trained on. No exceptions.
+
+---
+
+## 16. Post-MVP Architecture Evolution
+
+**Component Compositing (CHANGE-022):**
+The current flat-generation architecture generates sprites as fully composited pixel sequences. A component-based architecture — where a character is assembled from independently generated layers (base body, clothing, accessories, held items) — would solve the backpack problem more elegantly and make character customization trivial. DNA would become a node graph of attached components with defined attachment points rather than a flat pixel specification.
+
+This is the right long-term direction. It is not MVP scope. The flat-generation architecture ships first. Component compositing is evaluated after Genre 1A production threshold is met, specifically if brief-conditioned multi-view generation (CHANGE-016) proves insufficient in practice.
+
+A stub `model/architecture/COMPONENT_COMPOSITING_NOTES.md` is initialized in Phase 0 for reference.
+
+---
+
+*AM Pixel Specification v1.4 | Absentmind Studio*
+
+---
+
+## Changelog
+
+### v1.3 — 2026-04-12
+- **CHANGE-010:** §3.1 — 2D positional encoding requirement added. 1D encodings (sinusoidal or RoPE) encode sequence distance, not canvas proximity — incompatible with structure-aware token ordering which scrambles spatial sequence position. Each token embedding now sums three components: palette index embedding + learned X coordinate embedding + learned Y coordinate embedding. DNA conditioning tokens use a separate learned embedding type and do not carry canvas coordinates.
+- **CHANGE-011:** §3.4 — MaskGIT documented as Phase 4 optional speed experiment only; not a pre-Phase-0 architectural decision. Speed is explicitly not a primary project concern. Only triggered if batch generation is a demonstrated practical blocker. See README.md On Speed vs. Accuracy.
+- **CHANGE-012:** §5.3 — Sliding window boundary conditioning added for tileset generation. Right edge of approved left neighbor + bottom row of approved upper neighbor prepended as hard conditioning tokens before each tile generation sequence. Tileset generation must proceed in raster order. Failed seam rebuilds include failure annotation describing the specific failed edge.
+- **CHANGE-013 + REFINEMENT-013A:** §8.2/§8.3 — Rubric A restructured into two tiers. Tier 1: automated gate (85 points — Technical Compliance 25, Construction Quality 25, Readability 20, Animation Quality 15). Tier 2: human gate in approval UI (15 points — Originality 10, Soul/Visual Hierarchy 5). Soul criterion now context-aware: foreground characters (player, named NPC, boss) scored on personality and distinctiveness; background characters (generic townspeople, crowd fillers) scored on successful visual recession, criterion renamed "Visual Hierarchy" to reflect inverted goal. Passing threshold remains 95/100 combined.
+- **CHANGE-014:** §3.2 — Pixel classifier simplified to four categories for foundation training: transparent, outline, structural, non-structural. Shade/detail boundary is semantically ambiguous in scraped sprite data — a highlight on armor could be either, causing inconsistent token ordering and degraded training signal. Full five-category classification deferred to fine-tuning set via `--full-five-category` flag in pixel_classifier.py.
+- **CHANGE-015:** §3.4 Risk C — Skeletal pose tokens added as secondary animation upgrade path supplement. Rule-based 2D skeleton extraction (~10–12 key points per frame). Frame 2 conditioned on DNA + Brief + Frame 1 skeleton tokens (not raw pixel tokens) — gives model explicit positional deltas, not pixel values, avoiding copy pressure. Only build if raw-token temporal conditioning demonstrably fails. pose_extractor.py stub initialized Phase 0.
+- **CHANGE-016:** §4.1, §4.2, §4.3, §4.4, §5.1 — Brief elevated from flavor text to required complete feature inventory. `occluded_features` array field added to DNA schema to record every feature not visible in the master sprite (backpacks, ponytails, rear armor, tails, wings). DNA lock warning updated to explicitly prompt for hidden feature completeness before locking. DNA extraction process prompts user for occluded features after pixel extraction. Mode 1 non-master profile generation updated to twin input: `[DNA] + [Complete Brief including occluded_features] + [Master View Tokens]` — DNA provides color/style identity, Brief ensures hidden features appear in side/rear views, Master View Tokens provide visual grounding.
+- **CHANGE-017:** §3.2 — Paired-view training sequences added. view_pair_detector.py identifies candidate view pairs within sprite sheets via palette similarity and proportion matching. pair_annotator.py presents candidates for human confirmation. Confirmed pairs stored with view_pair_id and direction labels. Training format: `[DNA] + [Brief] + [View A Tokens]` → `[View B Tokens]`. Target: minimum 20% of training examples as paired-view sequences. Synthetic pairs (reflections) permitted at lower training weight.
+- **CHANGE-018:** §Changelog — Changelog section added to document.
+- **CHANGE-019:** §3.2 — Two-tier corpus strategy documented. Tier 1 = Golden Dataset: 3,000–5,000 manually curated, individually verified sprites stored in `data/golden/`; every sprite human-reviewed; primary quality signal for Stage 2 fine-tuning. Tier 2 = broad corpus: algorithmically scraped 30,000–50,000 sprites; used for Stage 1 foundation training. Phase 3 time allocation 3× original estimate warning added — manual curation cannot be automated or rushed.
+- **CHANGE-021:** §8.4 — vlm_critic.py added as upgrade-path-only tool in tooling list. Supplements deterministic heuristics for contextually ambiguous criteria (e.g., banding detector falsely flagging cylindrical shading on a metal pipe; outline checker failing a character wearing a black robe). Returns structured JSON: `{criterion, pass, violations, confidence}`. Only invoked on borderline automated failures, not every sprite. Stub initialized Phase 0; implemented Phase 5 only if false positive rates exceed 10%.
+- **CHANGE-022:** §16 Post-MVP Architecture Evolution added — component compositing documented as long-term right direction for the Backpack Problem and character customization. Flat generation ships first. Component compositing triggered only if brief-conditioned multi-view generation proves insufficient after Genre 1A. COMPONENT_COMPOSITING_NOTES.md stub initialized Phase 0.
+- **CHANGE-023:** §15 Training Data Provenance added — TRAINING_PROVENANCE_MANIFEST.json documented as immutable legal ledger. Legal rationale: deletion does not retroactively legalize training; model weights are evidence subject to discovery; deleting data after becoming aware of copyright risk constitutes spoliation of evidence; EU AI Act requires training data documentation for commercial providers. Acceptable license types defined (CC0, CC-BY, CC-BY-SA, commissioned, procedurally generated). Retention policy: never delete manifest or Golden Dataset.
+- Fixed duplicate training data sourcing priority section in §3.2 (appeared twice due to editing artifact).
+- **Path corrections:** §5.7 freeform output path corrected from `assets/freeform/` to `freeform/` (root-level directory per FOLDER_STRUCTURE.md). §4.4 and §5.2 path corrected from `CHARACTER_DNA/` to `dna/characters/`. §5.2 corrected from `SHEET_LAYOUT/` to `sheets/`. §3.2 stale cross-reference corrected from `§3.2 Provenance Manifest` to `§15 Training Data Provenance`. Mode 6 `### 5.6` header restored (was missing — content existed without section heading).
+
+### v1.3 — 2026-04-19
+- Working-tree hygiene only: repo umbrella `README.md`, archive folder naming (`bible-v1.1` … `bible-v1.3-latest`), and `am-pixel/README.md` / `SPEC.md` version parity check. No technical specification content change.
+
+### v1.4 — 2026-04-19
+- Bible **v1.4** (per Bible-wide version rule): the canonical tree that diverges from the frozen **`bible-v1.3-apr13`** snapshot is no longer co-numbered as v1.3; all headers/footers set to **1.4**; archive folder **`bible-v1.4`**. No additional technical specification delta beyond version alignment in this entry.
+
+### v1.2 — 2026-04-11
+- **CHANGE-004:** Restored missing `## 6. Project Organization` header — subsections 6.1, 6.2, 6.3 were orphaned with no parent heading.
+- **CHANGE-004:** Renumbered sections — Web UI moved from §14 to §13, Technical Stack from §15 to §14. No section 13 gap remains.
+- **CHANGE-003:** §3.1 — Removed "NVIDIA GPU with CUDA, minimum 10GB VRAM" hardware requirement. Replaced with reference to universal detection hierarchy in §14.
+- **CHANGE-003:** §14 Technical Stack completely rewritten with full detection hierarchy: NVIDIA→CUDA, AMD→ROCm, Apple Silicon→MPS, other GPU→OpenCL, no GPU→CPU. Cloud GPU rental note added for CPU-only training runs.
+- **CHANGE-001 + REFINEMENT-001A:** §3.2 — Structure-aware token ordering added. Five pixel categories: transparent (first — commits alpha mask), outline, fill (base regions), shade (light ramps), detail (last — small features). Positional encodings preserve original (x,y) canvas coordinates. Phase 4 comparison experiment required (structure-aware vs raster). Category distribution logging required; flag any category below 3%.
+- **CHANGE-007 (Risk A):** §3.4 — Sequence length error accumulation documented. Describes compounding prediction error problem at 3,072 tokens (48×64 battle sprite). Phase 4 gate: if >1,500 token pass rate < 70%, implement hierarchical generation before Phase 5. Hierarchical generation described as upgrade path.
+- **CHANGE-008 (Risk B):** §3.4 — DNA conditioning dilution at long sequences documented. Attention signal weakens over 3,072 tokens. Phase 4 measurement: top-half vs bottom-half DNA consistency delta via dna_diff.py. Cross-attention upgrade path if delta consistently > 10%.
+- **CHANGE-009 (Risk C):** §3.4 — Animation temporal coherence gap documented. Frame-independent generation enforces character continuity but not motion continuity. Phase 7–8 evaluation gate before temporal conditioning is built. Temporal conditioning upgrade path documented (previous frame tokens as conditioning input).
+- **CHANGE-002 + REFINEMENT-002A:** §5.5b — Prompt Expansion Layer added as optional character creation step. LLM API call converts short description to full DNA brief. Expand button visible only in character/NPC modes. SNES style-bible guardrails in expansion system prompt (no neon, gradients, modern materials, sub-pixel detail). Always editable before confirmation. Freeform Mode 7 excluded. Built Phase 7.
+- §3.3 Approval Pipeline row updated to note optional prompt expansion capability.
+
+### v1.1 — 2026-04-11
+- Product definition updated to include freeform generation capability.
+- §3.3: Added Freeform Engine and Web UI as first-class system components.
+- §3.1: Added Mode 7 freeform bypass note — no DNA conditioning, full 256-color vocabulary, outputs PNG only, never touches continuity manifest.
+- §4.3: DNA Lock Warning scoped to Modes 1–6 only — Mode 7 explicitly non-DNA.
+- Mode 7 Freeform (§5.7) added — full spec: bypasses DNA/style bible/SNES constraints, full 256-color palette, any user-specified resolution, lighter quality check, anti-pattern detector still runs, outputs to `freeform/` (root-level) only, max recommended 256×256, cannot be promoted to project assets without Mode 1 redesign. (Note: original doc said `assets/freeform/` — corrected to `freeform/` in v1.3 path audit.)
+- §13 (now §13 after renumber) Web UI added — chat panel, 1×/4× sprite preview, approve/reject/adjust controls, project tabs, freeform tab, continuity manifest viewer, hardware status bar, FastAPI + plain HTML/JS, localhost only, web UI skeleton required before Practice Gauntlet.
+- Technical stack updated: cloud GPU fallback note, FastAPI web UI as primary interface.
+- Portrait profile added to Mode 1 (48×48–64×64, expression variants, max 4 unique detail colors).
+- Large-format/multi-tile boss mode added to Mode 1 (multi-tile composition, sync animation, tile grid manifest).
+- Mode 3 renamed to "Environment, Tileset & Parallax Generation."
+- Tileset Anchor system added to Mode 3 (locked seed tiles governing all subsequent tile generation).
+- Seam validation requirement added to Mode 3 (all four edges mandatory).
+- Transition tiles added as explicit required tile type in Mode 3.
+- World map location markers added to Mode 3.
+- Mode 3b parallax background spec added — layer stack (sky/far/mid/foreground), Parallax Anchor, layer_compositor.py evaluation, character contrast check.
+- Mode 4 expanded: status condition icons, element icons, item/equipment icon system with category grammar validation, world map location markers, title screen as special UI mode.
+- Mode 6 Battle Effect Animations added as named mode.
+- Tab structure updated to include Battle Effects, Portrait Art, Location Markers, all icon types, Title Screen.
+- Single rubric replaced with three rubrics: Rubric A (characters/enemies/portraits/effects), Rubric B (tilesets — seam integrity 30pts as primary), Rubric C (parallax — layer depth differentiation 25pts as primary).
+- Tooling added: seam_validator, tileset_anchor_extractor, layer_compositor, effect_timing_evaluator, icon_grammar_checker.
+
+### v1.0 — Original Release
+- Product definition: custom autoregressive transformer generating palette-index tokens — not a wrapper around existing image generators.
+- Quality standard: 95/100 individual threshold, 99/100 production threshold (threshold definition was ambiguous at this version — ⚠️ CRITICAL DEFINITION callout added between v1.0 and v1.1).
+- Core architecture: transformer decoder, DNA conditioning via prefix tokens, CUDA-only hardware requirement.
+- Character DNA system: full schema, lock warning, extraction process.
+- Generation modes 1–5: character creation, sheet extension, tileset/environment, UI, font.
+- Single evaluation rubric covering all asset types.
+- Project organization: tab structure, GitHub integration, multi-project DNA.
+- Continuity enforcement: three checks, continuity manifest.
+- Self-training layer: boot training, practice gauntlet, continuous protocol.
+- Style modes: SNES default, hardware constraint toggle, future style expansion path.
+- Export formats: Godot, RPG Maker MZ, GameMaker, Unity, generic JSON.
+- Deployment: local mode, server mode, freemium tiers.
+- Technical stack: CUDA-only.

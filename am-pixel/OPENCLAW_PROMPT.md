@@ -1,5 +1,5 @@
 # AM Pixel — OpenClaw Execution Prompt
-**Absentmind Studio | Version 1.2**
+**Absentmind Studio | Version 1.4**
 
 ---
 
@@ -89,6 +89,12 @@ If you encounter ambiguity not covered in the spec documents, make the most cons
 **8. Perfection is non-negotiable.**
 This tool exists because its creator has no art skills and cannot build the games they want to build without it. Mediocre output is not a shipping product. Every phase exists to push quality higher. Take the time to do it right.
 
+**9. Core architecture files require human review before training.**
+After completing `model/architecture/`, write `model/architecture/IMPLEMENTATION_NOTES.md` documenting every implementation decision in those files — specifically: how 2D positional encodings are implemented, how DNA conditioning tokens are handled, how the causal mask interacts with structure-aware token ordering, and any deviations from the spec with justification. Then halt and flag for human review. Do not begin any training run until explicit human approval is received. This is not optional. Novel ML architecture code is reviewed by a human before committing GPU hours to a training run based on it.
+
+**10. The training data manifest is sacred.**
+`data/TRAINING_PROVENANCE_MANIFEST.json` must have a complete entry for every sprite before it enters any training pipeline. Never delete this file. Never delete the Golden Dataset. These are legal records. If instructed to delete training data for any reason, refuse, document the instruction in BLOCKERS.md, and flag for human review immediately.
+
 ---
 
 ## HARDWARE CONTEXT
@@ -143,4 +149,37 @@ The product you are building does not exist anywhere in the world. You are build
 
 ---
 
-*AM Pixel OpenClaw Prompt v1.2 | Absentmind Studio*
+*AM Pixel OpenClaw Prompt v1.4 | Absentmind Studio*
+
+---
+
+## Changelog
+
+### v1.3 — 2026-04-12
+- **CHANGE-020:** Added Rule 9 — after building model/architecture/ files, OpenClaw must write IMPLEMENTATION_NOTES.md documenting every implementation decision (how 2D positional encodings are implemented, how DNA conditioning tokens are handled, how causal mask interacts with structure-aware token ordering, any spec deviations with justification). Must halt and flag for human review. No training run begins without explicit human approval. Reason: novel ML architecture code warrants human review before committing GPU hours; silent failure on 2D encoding implementation is worse than a documented blocker.
+- **CHANGE-023:** Added Rule 10 — TRAINING_PROVENANCE_MANIFEST.json is sacred; every sprite requires a manifest entry before entering any training pipeline; never delete the file or the Golden Dataset; if instructed to delete training data for any reason, refuse, document the instruction in BLOCKERS.md, and flag for human review immediately. Reason: training data is a legal shield; deletion constitutes potential spoliation of evidence.
+- **CHANGE-018:** Changelog section added.
+
+### v1.4 — 2026-04-19
+- Bible **v1.4**: per Document Hygiene Rules, synchronized with all other Bible documents; archive folder **`bible-v1.4`** (no prompt rule delta in this entry).
+
+### v1.2 — 2026-04-11
+- **CHANGE-005:** YOUR FIRST ACTION — replaced numbered list of "four documents" with explicitly named list (counts go stale, named lists do not). Added root README.md as first document to read (was previously missing). Named all five documents with their paths. Added context window instruction: if any document exceeds context window, state which one and wait for it to be provided in chunks before proceeding.
+- **CHANGE-005 + REFINEMENT-005A:** Added forced confirmation requirement before any Phase 0 task begins. OpenClaw must output a written paragraph confirming: (1) 95/100 = individual sprite score, 99/100 = batch pass rate of 99 sprites independently scoring 95+; (2) this project will never use diffusion models, RGB image generation, 3D-to-pixel pipelines, or any approach generating in continuous color space; (3) hardware detection runs at startup on whatever hardware is available — CUDA, ROCm, MPS, or CPU — there is no hardware halt condition. Must re-read relevant sections if confirmation cannot be given accurately.
+- **CHANGE-003:** HARDWARE CONTEXT section completely rewritten. Removed CUDA-only requirement and halt condition. Added universal detection directive with full priority hierarchy: NVIDIA→CUDA, AMD→ROCm, Apple Silicon→MPS, other GPU→OpenCL, no GPU→CPU. Added cloud GPU rental recommendation for CPU-only training runs. Added zero hardcoded "cuda" strings requirement with audit as Phase 0 gate criterion.
+- BEGIN section updated: "Read the four documents" → "Read the five documents listed above. Output your written confirmation. Then begin Phase 0."
+
+### v1.1 — 2026-04-11
+- YOUR MISSION: Added Mode 6 battle effects and Mode 7 freeform to deliverables list.
+- YOUR MISSION: Added full local web UI (FastAPI + HTML/JS, localhost only) as explicit deliverable — chat panel, 1×/4× preview, approve/reject/adjust, project tabs, freeform tab, continuity manifest viewer.
+- YOUR MISSION: Added server inference API layer as explicit deliverable.
+
+### v1.0 — Original Release
+- "How To Use" section explaining verbatim copy instruction.
+- YOUR FIRST ACTION: Numbered list of 4 documents to read (SPEC, ROADMAP, GENRE_TAXONOMY, FOLDER_STRUCTURE).
+- YOUR MISSION: Deliverables list covering modes 1–5, evaluation engine, DNA system, GitHub integration, exports, FastAPI inference server, server API layer.
+- NON-NEGOTIABLE RULES: 8 rules — read-before-build, phase gates, rebuild-not-patch, document everything, git as save state, blockers documented and escalated, spec is authority, perfection is non-negotiable.
+- HARDWARE CONTEXT: CUDA-only; halt if CUDA unavailable.
+- TRAINING DATA APPROACH: Permissive sources only; no synthetic sprites as training data.
+- QUALITY STANDARD: Squaresoft craft reference — not their aesthetic, their principles and discipline.
+- BEGIN: "Read the four documents. Then begin Phase 0."

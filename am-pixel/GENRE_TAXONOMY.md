@@ -1,5 +1,5 @@
 # AM Pixel — Genre Taxonomy
-**Absentmind Studio | Version 1.1**
+**Absentmind Studio | Version 1.4**
 
 ---
 
@@ -179,4 +179,24 @@ Each genre is considered mastered when:
 
 ---
 
-*AM Pixel Genre Taxonomy v1.1 | Absentmind Studio*
+*AM Pixel Genre Taxonomy v1.4 | Absentmind Studio*
+
+---
+
+## Changelog
+
+### v1.3 — 2026-04-12
+- **CHANGE-018:** Changelog section added — version corrected from v1.2 to v1.3 to align with all other Bible documents
+
+### v1.4 — 2026-04-19
+- Bible **v1.4**: per Document Hygiene Rules, synchronized with all other Bible documents; archive folder **`bible-v1.4`** (no taxonomy delta in this entry).
+
+### v1.2 — 2026-04-11
+- Version alignment only — no content changes. PROPOSED_CHANGES_001 session did not affect this document but version is incremented to maintain Bible-wide version consistency per Document Hygiene Rules.
+
+### v1.1 — 2026-04-11
+- Added Mode 7 freeform note to Overview — genre-agnostic, never affects mastery thresholds, always available
+- Added Mode 7 freeform reference to The Blend Problem section
+
+### v1.0 — Original release
+- Initial document — tiered genre structure, mastery threshold definition, Tier 1/2/3 genre lists with reference games and mastery definitions

@@ -1,5 +1,5 @@
 # AM Pixel — Project Folder Structure
-**Absentmind Studio | Version 1.2**
+**Absentmind Studio | Version 1.4**
 
 OpenClaw initializes this exact structure in Phase 0. Every directory and file listed here must exist before Phase 1 begins. Placeholder files use `.gitkeep`.
 
@@ -8,12 +8,14 @@ OpenClaw initializes this exact structure in Phase 0. Every directory and file l
 ```
 am-pixel/
 │
-├── README.md                          ← Links to all spec documents
+├── README.md                          ← Links to all spec documents; orientation hub for OpenClaw
 ├── SPEC.md                            ← Full technical specification
 ├── ROADMAP.md                         ← Phased execution plan
 ├── GENRE_TAXONOMY.md                  ← Genre tiers and mastery definitions
 ├── FOLDER_STRUCTURE.md                ← This document
 ├── OPENCLAW_PROMPT.md                 ← Prompt for OpenClaw initialization
+├── BIBLE_CHANGELOG.md                 ← Complete authoritative change history for all Bible documents; log changes here before applying to any document
+├── PROPOSED_CHANGES_002.md            ← Current staging document for proposed changes under discussion; items here are not yet committed to spec files
 │
 ├── knowledge/                         ← Boot Training knowledge base
 │   ├── HARDWARE_CONSTRAINTS.md        ← SNES + 5 other platforms
@@ -36,8 +38,10 @@ am-pixel/
 │   ├── architecture/
 │   │   ├── transformer.py             ← Core model architecture (PyTorch)
 │   │   ├── conditioning.py            ← DNA conditioning encoder (prefix method; cross-attention upgrade path documented in SPEC §3.4)
-│   │   ├── tokenizer.py               ← Palette index tokenizer (structure-aware ordering: transparent→outline→fill→shade→detail)
-│   │   └── config.py                  ← Model hyperparameters
+│   │   ├── tokenizer.py               ← Palette index tokenizer — outputs (palette_index, canvas_x, canvas_y) tuples; 2D positional encodings
+│   │   ├── config.py                  ← Model hyperparameters
+│   │   ├── IMPLEMENTATION_NOTES.md    ← Written by OpenClaw after building architecture files; human review required before any training run (CHANGE-020)
+│   │   └── COMPONENT_COMPOSITING_NOTES.md ← Post-MVP architecture reference — component/layer-based generation future direction (CHANGE-022)
 │   ├── training/
 │   │   ├── train.py                   ← Main training loop
 │   │   ├── finetune.py                ← Fine-tuning loop
@@ -55,18 +59,24 @@ am-pixel/
 │
 ├── data/                              ← Training data pipeline
 │   ├── scraper/
-│   │   ├── scraper.py                 ← Source scraping and downloading
+│   │   ├── scraper.py                 ← Source scraping and downloading — writes provenance entry before writing sprite
 │   │   ├── sources.md                 ← Documented data sources with license status
 │   │   └── scrape_log.md              ← Log of all scraping runs
 │   ├── pipeline/
 │   │   ├── extractor.py               ← Sprite extraction from sprite sheets
 │   │   ├── indexer.py                 ← RGB → palette index conversion
-│   │   ├── pixel_classifier.py        ← Classifies each pixel as transparent/outline/fill/shade/detail for structure-aware ordering
-│   │   ├── sequence_reorderer.py      ← Reorders token sequences: transparent→outline→fill→shade→detail with positional encoding preservation
-│   │   ├── validator.py               ← SNES palette compliance validation
+│   │   ├── pixel_classifier.py        ← Classifies each pixel as transparent/outline/structural/non-structural (four-category for Stage 1; --full-five-category flag for Stage 2)
+│   │   ├── sequence_reorderer.py      ← Reorders token sequences with positional encoding preservation — outputs (palette_index, canvas_x, canvas_y) tuples
+│   │   ├── view_pair_detector.py      ← Identifies candidate view pairs within sprite sheets using palette similarity and proportion matching (CHANGE-017)
+│   │   ├── pair_annotator.py          ← Presents view pair candidates for human confirmation; writes confirmed pairs with view_pair_id (CHANGE-017)
+│   │   ├── pose_extractor.py          ← STUB — documented interface only. Extracts simplified 2D skeleton key points from sprites for animation temporal conditioning upgrade path (CHANGE-015)
+│   │   ├── validator.py               ← SNES palette compliance validation — checks for provenance entry before passing sprite
 │   │   ├── metadata.py                ← Metadata tagging for training pairs
 │   │   └── splitter.py                ← Train/validation split
-│   ├── corpus/                        ← Processed training data
+│   ├── golden/                        ← Tier 1 — manually curated Golden Dataset (3,000–5,000 sprites, human-verified)
+│   │   ├── CONTRIBUTORS.md            ← Human record of Golden Dataset contributors: handle, anonymity preference, accepted sprites, tier
+│   │   └── .gitkeep
+│   ├── corpus/                        ← Tier 2 — broad scraped corpus
 │   │   ├── train/                     ← Training split
 │   │   │   └── .gitkeep
 │   │   └── validation/                ← Validation split
@@ -75,7 +85,8 @@ am-pixel/
 │   │   ├── generator.py               ← Programmatic bad sprite generator
 │   │   └── labeled/                   ← Bad sprite + corrected version pairs
 │   │       └── .gitkeep
-│   └── corpus_stats.md                ← Corpus statistics log
+│   ├── TRAINING_PROVENANCE_MANIFEST.json  ← IMMUTABLE LEGAL LEDGER — initialized as [] in Phase 0, never deleted. Every training sprite logged with source, license, pHash, tier. (CHANGE-023)
+│   └── corpus_stats.md                ← Corpus statistics log — reports Tier 1 and Tier 2 separately
 │
 ├── tools/                             ← Evaluation and management tooling
 │   ├── palette_validator.py           ← Checks sprite against palette constraints
@@ -93,6 +104,7 @@ am-pixel/
 │   ├── sheet_manager.py               ← Non-destructive sprite sheet operations
 │   ├── comparison_sheet.py            ← Generates side-by-side project character comparison
 │   ├── continuity_checker.py          ← Runs all three continuity checks
+│   ├── vlm_critic.py                  ← STUB — documented interface only. VLM-based semantic evaluation for contextually ambiguous rubric criteria; only invoked on borderline automated failures (CHANGE-021)
 │   └── export/
 │       ├── godot_exporter.py          ← Godot SpriteFrames resource export
 │       ├── rpgmaker_exporter.py       ← RPG Maker MZ format export
@@ -215,6 +227,7 @@ am-pixel/
 │   ├── training_log.md                ← Training run summaries + architecture experiment results
 │   ├── evaluation.log                 ← Evaluation engine accuracy tracking
 │   ├── errors.log                     ← Runtime errors and stack traces
+│   ├── freeform_log.md                ← Log of all Mode 7 freeform generation outputs (reference only — not project assets)
 │   ├── BLOCKERS.md                    ← Documented blockers awaiting human input
 │   └── phase_gates.md                 ← Record of phase gate completions with evidence
 │
@@ -267,4 +280,56 @@ BLOCKER: [short description] — awaiting human input
 
 ---
 
-*AM Pixel Folder Structure v1.2 | Absentmind Studio*
+*AM Pixel Folder Structure v1.4 | Absentmind Studio*
+
+---
+
+## Changelog
+
+### v1.3 — 2026-04-12
+- **CHANGE-017:** data/pipeline/ — added view_pair_detector.py (identifies candidate view pairs within sprite sheets via palette similarity and proportion heuristics) and pair_annotator.py (presents candidates for human confirmation, writes confirmed pairs with view_pair_id and direction labels).
+- **CHANGE-015:** data/pipeline/ — added pose_extractor.py stub. Documented interface only — extracts simplified 2D skeleton key points from sprites for animation temporal conditioning upgrade path. Only implemented if raw-token temporal conditioning fails.
+- **CHANGE-019:** data/ — added golden/ directory as Tier 1 manually curated Golden Dataset storage (3,000–5,000 sprites, human-verified). Added data/golden/CONTRIBUTORS.md — human record of Golden Dataset contributors with handle, anonymity preference, accepted sprite count, tier.
+- **CHANGE-023:** data/ — added TRAINING_PROVENANCE_MANIFEST.json. Initialized as empty array in Phase 0. Immutable legal ledger recording source URL, creator, license, pHash, and tier for every training sprite. Never deleted. Scraper writes entry before writing sprite.
+- **CHANGE-023:** corpus_stats.md description updated — must report Tier 1 and Tier 2 statistics separately.
+- **CHANGE-021:** tools/ — added vlm_critic.py stub. Documented interface only — VLM-based semantic evaluation for contextually ambiguous rubric criteria. Only invoked on borderline automated failures; returns structured JSON. Implemented Phase 5 only if false positive rates warrant it.
+- **CHANGE-020:** model/architecture/ — added IMPLEMENTATION_NOTES.md. Written by OpenClaw after building architecture files; documents every implementation decision (2D positional encodings, DNA conditioning, causal mask). Human review required and explicit approval must be received before any training run begins.
+- **CHANGE-022:** model/architecture/ — added COMPONENT_COMPOSITING_NOTES.md stub. Post-MVP architecture reference documenting component/layer-based generation as future direction for the Backpack Problem and character customization.
+- **CHANGE-014:** data/pipeline/pixel_classifier.py description updated — four-category classification default (transparent, outline, structural, non-structural); `--full-five-category` flag for fine-tuning stage where data quality is controlled.
+- **CHANGE-010:** model/architecture/tokenizer.py description updated — outputs (palette_index, canvas_x, canvas_y) tuples; 2D positional encodings (learned X + Y coordinate embeddings summed at input layer).
+- **CHANGE-018:** Changelog section added.
+- Added `BIBLE_CHANGELOG.md` and `PROPOSED_CHANGES_002.md` to top-level file listing — these are meta-documents that exist in the repo and must be visible to OpenClaw.
+- Added missing `logs/freeform_log.md` to logs directory listing — referenced in SPEC §5.7 but previously absent from folder structure.
+
+### v1.4 — 2026-04-19
+- Bible **v1.4**: per Document Hygiene Rules, synchronized with all other Bible documents; archive folder **`bible-v1.4`** (no folder-tree delta in this entry).
+
+### v1.2 — 2026-04-11
+- **CHANGE-003:** model/ — added hardware/ subdirectory with detector.py. All device references throughout codebase must route through this utility. No hardcoded "cuda" strings anywhere.
+- **CHANGE-003:** model/architecture/conditioning.py — comment updated to reference cross-attention upgrade path documented in SPEC §3.4 Risk B.
+- **CHANGE-001:** model/architecture/tokenizer.py — comment updated to document structure-aware ordering (transparent→outline→fill→shade→detail).
+- **CHANGE-001:** data/pipeline/ — added pixel_classifier.py (classifies each pixel into five structural categories for structure-aware ordering).
+- **CHANGE-001:** data/pipeline/ — added sequence_reorderer.py (reorders token sequences with positional encoding preservation).
+- **CHANGE-002:** pipeline/approval/ — added prompt_expander.py (Mode 5b LLM expansion call with SNES style-bible guardrails, genre-aware system prompt).
+- logs/ section expanded — all files now initialized as placeholder files in Phase 0: hardware.log (backend, GPU model, VRAM, baseline inference speed), evaluation.log, errors.log, generation_log.md, rebuild_log.md, training_log.md (with structured sections for Phase 4 architecture experiments), BLOCKERS.md, phase_gates.md (pre-populated with all Phase 0–8 gate checklists).
+- requirements_cuda.txt renamed to requirements_hardware.txt to reflect universal backend support.
+
+### v1.1 — 2026-04-11
+- pipeline/modes/ — added mode6_effects.py and mode7_freeform.py.
+- pipeline/ — added mode3b_parallax.py.
+- ui/ directory added as new top-level: app.py (FastAPI entrypoint), templates/ (index.html, project_tabs.html, freeform.html), static/ (main.css, main.js).
+- assets/ — added battle_effects/ with 8 subcategories: projectile/, area/, status/, healing/, elemental/, summon/, hit_impact/, death/.
+- assets/tilesets/world_map/ — split into tiles/ and location_markers/ subdirectories.
+- assets/ui/ — added item_icons/, status_icons/, element_icons/, title_screen/.
+- freeform/ directory added at root level for standalone Mode 7 outputs (never project assets).
+
+### v1.0 — Original Release
+- Complete directory tree for am-pixel/ project established.
+- model/ with architecture/, training/, inference/, checkpoints/, logs/.
+- data/ with scraper/, pipeline/, corpus/, antipatterns/.
+- tools/ with evaluation and management scripts (palette_validator, dna_diff, rubric_scorer, etc.).
+- pipeline/ with approval/, modes/ (mode1–5 at this version), github_integration, project_manager.
+- projects/, dna/, sheets/, assets/ (characters, enemies, tilesets, parallax, ui, fonts), practice/, logs/, tests/.
+- requirements.txt, requirements_cuda.txt, .env.example.
+- File naming conventions section established.
+- Git commit convention section established.
