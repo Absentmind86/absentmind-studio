@@ -74,7 +74,7 @@ absentmind-studio/
 
 ## Status
 
-AM Pixel specification is at v1.4 (`am-pixel/SPEC`, `ROADMAP`, `FOLDER_STRUCTURE`, `OPENCLAW_PROMPT`, `GENRE_TAXONOMY`). Series 002 refinements are integrated into those documents; `am-pixel/PROPOSED_CHANGES_002.md` is retained as an archive of the original proposals. The spec is considered working and executable — OpenClaw can begin from `am-pixel/OPENCLAW_PROMPT.md`. Refinements are applied as they are validated; this is a living document set and gaps will be caught and addressed as the project matures.
+AM Pixel specification is at **v1.5** (`am-pixel/CONSTITUTION`, `SPEC`, `ROADMAP`, `FOLDER_STRUCTURE`, `OPENCLAW_PROMPT`, `GENRE_TAXONOMY`). Series 002 and **Series 003** (compliance, session logs, Startup Protocol) are integrated; proposal archives remain in `am-pixel/PROPOSED_CHANGES_*.md`. OpenClaw should read **CONSTITUTION.md** first, then `OPENCLAW_PROMPT.md`.
 
 ---
 

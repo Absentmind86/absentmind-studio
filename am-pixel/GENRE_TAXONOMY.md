@@ -1,5 +1,5 @@
 # AM Pixel — Genre Taxonomy
-**Absentmind Studio | Version 1.4**
+**Absentmind Studio | Version 1.5**
 
 ---
 
@@ -179,11 +179,14 @@ Each genre is considered mastered when:
 
 ---
 
-*AM Pixel Genre Taxonomy v1.4 | Absentmind Studio*
+*AM Pixel Genre Taxonomy v1.5 | Absentmind Studio*
 
 ---
 
 ## Changelog
+
+### v1.5 — 2026-04-21
+- Bible **v1.5**: synchronized with all other Bible documents (PROPOSED_CHANGES_003 / Series 003 — no taxonomy content delta).
 
 ### v1.3 — 2026-04-12
 - **CHANGE-018:** Changelog section added — version corrected from v1.2 to v1.3 to align with all other Bible documents

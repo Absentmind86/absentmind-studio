@@ -1,5 +1,5 @@
 # AM Pixel — Execution Roadmap
-**Absentmind Studio | Version 1.4**
+**Absentmind Studio | Version 1.5**
 
 ---
 
@@ -51,10 +51,23 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Create `pipeline/modes/mode7_freeform.py` stub with documented interface
 - [ ] Initialize `ui/` directory — build working web UI skeleton: chat panel, 1×/4× image preview, approve/reject/adjust controls, project tabs, freeform tab. Must be functional before Phase 5.
 - [ ] Initialize empty log placeholder files in `logs/` (hardware.log, training.log, evaluation.log, generation_log.md, rebuild_log.md, errors.log, BLOCKERS.md, phase_gates.md)
+- [ ] Add `am-pixel/CONSTITUTION.md` — nine non-negotiable rules; read first every session (CHANGE-025)
+- [ ] Add `logs/session_log.md` and `logs/decision_log.md` with schema headers (CHANGE-026, CHANGE-027)
+- [ ] Implement `tools/compliance.py` and `tools/dna_lock_verifier.py`; add `tests/test_compliance.py` — gates validated (CHANGE-028)
+- [ ] Install pre-commit hook from `am-pixel/git-hooks/pre-commit` → `.git/hooks/pre-commit` (or equivalent); verify `python am-pixel/tools/compliance.py` runs
+- [ ] **Emergency halt test:** Create `EMERGENCY_HALT` at repo root, confirm gate functions exit; remove file only as human, confirm gates resume
 - [ ] Run tool validation tests — confirm each tool produces correct output on test inputs
+- [ ] **Hardware Reality Check (CHANGE-030):** Read Phase 4 table above; log your hardware tier and estimated Phase 4 training time to `logs/hardware.log`
+- [ ] Run Startup Protocol once — write first entry to `logs/session_log.md` (CHANGE-026)
+- [ ] Write at least one sample entry to `logs/decision_log.md` during initialization if any non-mechanical choice was made (CHANGE-027)
 - [ ] Write initial commit: `"Phase 0 complete: environment initialized"`
 
 ### Completion Gate
+- [ ] **CONSTITUTION.md** exists and is listed in `FOLDER_STRUCTURE.md`
+- [ ] **Session Startup Protocol** documented as Rule 11 in `OPENCLAW_PROMPT.md`; `logs/session_log.md` exists and has been written to at least once
+- [ ] `logs/decision_log.md` exists with schema header and has been written to at least once during Phase 0 initialization
+- [ ] `compliance.py` passes `tests/test_compliance.py`; `EMERGENCY_HALT` mechanism tested; pre-commit hook installed and prints commit check banner
+- [ ] Hardware Reality Check table read; developer hardware tier and estimated Phase 4 time logged to `logs/hardware.log`
 - [ ] Hardware detection ran successfully — backend logged to `logs/hardware.log` with GPU model, VRAM, backend, and baseline inference speed
 - [ ] PyTorch functional on detected backend
 - [ ] Zero hardcoded `"cuda"` strings in any script — confirmed by audit
@@ -210,6 +223,23 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 ## Phase 4 — Model Architecture & Initial Training
 *Build and train the custom transformer*
 
+⚠️ **HARDWARE REALITY CHECK (CHANGE-030)** — Read before beginning Phase 4 tasks below.
+
+Phase 4 involves sequences up to **3,072 tokens** on **50,000+** training examples. All times below are **best-case** estimates — actual times may be **2–3×** longer.
+
+| Hardware Tier | Inference (typ.) | Phase 4 training (best-case) | Recommendation |
+|---------------|------------------|------------------------------|----------------|
+| Cloud GPU (A100 / H100) | 500–2000 tok/s | 4–12 hours | Fastest; ~$10–40 USD for Phase 4 |
+| NVIDIA GPU (10GB+ VRAM) | 100–500 tok/s | 1–3 days | All phases; recommended minimum |
+| NVIDIA GPU (6–8GB VRAM) | 50–200 tok/s | 3–7 days | All phases; use gradient checkpointing |
+| Apple Silicon M2/M3 | 30–100 tok/s | 1–2 weeks | All phases; patience required |
+| Apple Silicon M1 | 15–50 tok/s | 2–4 weeks | Inference preferred |
+| CPU only | 1–10 tok/s | **Months** | **Cloud GPU REQUIRED** for training |
+
+**Cloud GPU rental is required** for CPU-only machines attempting Phase 4 training. Recommended: RunPod, Vast.ai, Lambda Labs. Budget approximately **$10–50 USD** for a full Phase 4 run on a mid-tier cloud GPU.
+
+The `hardware.log` baseline speed (tokens/sec on a 16×16 test sprite, logged in Phase 0) is the best local predictor. If baseline is **under 20 tokens/sec**, plan for cloud GPU **before** Phase 4 begins — not during it.
+
 ### Tasks
 - [ ] Implement transformer architecture in PyTorch
   - Decoder-only (GPT-style) autoregressive model
@@ -356,6 +386,8 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Implement prompt expansion layer (Mode 5b) — language model API call with SNES style-bible guardrails, editable output, genre-aware system prompt
 - [ ] Evaluate animation temporal coherence — generate 5 walk cycles, score Animation Quality rubric category specifically for motion quality (not character quality). If motion quality failures are consistent, implement temporal frame conditioning before Phase 8.
 - [ ] End-to-end test: create a complete sample project with 3 characters, 1 tileset, UI, and font
+- [ ] All pipeline mode files (`pipeline/modes/mode*.py`) contain module docstrings with mode-specific critical rules (CHANGE-028 Mechanism 4)
+- [ ] All irreversible actions (DNA lock, training start, corpus write) call the appropriate `compliance` gate (CHANGE-028)
 
 ### Completion Gate
 - [ ] All seven generation modes functional end-to-end
@@ -376,8 +408,9 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Generate production validation batch: 100 sprites across all asset types for Genre 1A
   - Characters (world and battle), enemies, interior tilesets, exterior tilesets, world map tiles, UI, fonts, animated tiles
 - [ ] Score all 100 against rubric
-- [ ] Count passing sprites (95+)
-- [ ] If below 99/100: identify failure patterns, run targeted fine-tuning, repeat
+- [ ] Count passing sprites (95+ combined score)
+- [ ] **Failure cluster analysis (CHANGE-031):** When batch pass rate falls below 99/100, **before** blind fine-tuning: categorize failures by rubric category and asset type; log cluster analysis in `logs/training_log.md`; select **one** intervention; re-run batch. **Maximum escalation:** three consecutive diagnosis cycles without improvement → stop and document in `logs/BLOCKERS.md` for human review.
+- [ ] If still below 99/100: apply selected intervention (targeted fine-tuning, sequence-length path if battle-sprite cluster, rubric calibration, or more data per protocol), then repeat
 - [ ] Document every failure pattern in `MISTAKE_TAXONOMY.md`
 - [ ] Update `LESSONS_LEARNED.md` with production learnings
 - [ ] Human evaluation: present a set of AM Pixel sprites alongside SNES reference sprites — can the evaluator reliably distinguish them?
@@ -430,11 +463,14 @@ Do not silently fail. Do not work around a fundamental problem without documenti
 
 ---
 
-*AM Pixel Execution Roadmap v1.4 | Absentmind Studio*
+*AM Pixel Execution Roadmap v1.5 | Absentmind Studio*
 
 ---
 
 ## Changelog
+
+### v1.5 — 2026-04-21
+- **Series 003 (CHANGE-025–031):** Phase 0 expanded — CONSTITUTION.md, session_log, decision_log, compliance.py + tests, pre-commit hook, emergency halt test, Hardware Reality Check logging. Phase 4 — Hardware Reality table before tasks (CHANGE-030). Phase 7 — mode docstrings + compliance integration gates. Phase 8 — failure cluster analysis + three-cycle escalation (CHANGE-031).
 
 ### v1.3 — 2026-04-12
 - **CHANGE-019:** Phase 3 completely rewritten with two-tier corpus strategy. 3× time allocation warning added — manual curation cannot be automated or rushed. Tier 1 Golden Dataset (3,000–5,000 sprites, manually verified) established as primary Phase 3 deliverable. Tier 2 broad corpus (30,000–50,000) for volume training. Provenance manifest required before any data collection begins.

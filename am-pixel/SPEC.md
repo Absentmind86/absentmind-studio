@@ -1,5 +1,5 @@
 # AM Pixel — Full Technical Specification
-**Absentmind Studio | Version 1.4**
+**Absentmind Studio | Version 1.5**
 
 ---
 
@@ -138,7 +138,8 @@ Every sprite entering the training pipeline must have a corresponding entry in `
 | Training Engine | Self-directed research, corpus curation, model training, quality fine-tuning |
 | Generation Engine | Custom transformer inference — produces sprite candidates from DNA + prompt |
 | Freeform Engine | Unconstrained generation mode — bypasses DNA and style bible, uses full 256-color vocabulary, any resolution, outputs PNG only. See Mode 7. |
-| Evaluation Engine | Scores every candidate against the correct rubric (A/B/C) before human sees it. Cannot pass below 95 for project modes. |
+| Compliance Layer | `tools/compliance.py` — emergency halt, DNA lock gate, phase advance gate, training run gate, provenance gate. Irreversible pipeline actions require gate checks (CHANGE-028). |
+| Evaluation Engine | Scores every candidate against the correct rubric (A/B/C) before human sees it. Cannot pass below 95 combined for project modes. Automated gate 85/85 first. |
 | DNA Store | Persistent database of every approved character's exact visual specification |
 | Approval Pipeline | Human-facing conversation layer — text input, candidate presentation, adjustment handling, optional prompt expansion for character briefs |
 | Project Registry | Master project state — palette, proportion system, animation standards, all assets |
@@ -297,7 +298,20 @@ The moment a character design is approved, the system presents:
 >
 > *This design is now the DNA source for ALL future sprites of this character across all profiles. Every animation, every scale variant, every future addition will be generated from this DNA. This cannot be changed without re-approving the base design and regenerating all derived sprites. Confirm lock?"*
 
+> **⚠️ ROLLBACK COST WARNING (CHANGE-029):** A full DNA rollback on a character with complete animation sets requires regenerating 40+ frames across all profiles, each through the full approval loop. A rollback can represent as much work as the original character creation. Confirm the brief is complete and the design is correct before locking.
+
 **DNA locking applies to Modes 1 through 6 only.** Mode 7 (Freeform) is explicitly non-DNA. Freeform outputs do not update the continuity manifest, the DNA store, or any project file. They are standalone PNG exports only.
+
+### DNA Rollback Procedure (CHANGE-029)
+
+Locked DNA is intended to be permanent. When locked DNA must be revised, follow this procedure — **OpenClaw does not initiate a rollback without explicit human authorization (Step 1).**
+
+1. **Human approval:** The human confirms rollback is authorized and states the reason in writing. Document in `logs/rebuild_log.md` and `logs/decision_log.md`. No rollback work begins before this.
+2. **Identify scope:** Locate the `"DNA locked: [character_name] v1"` git commit. All sprites committed after that reference this DNA as derived. Sheet manifests record which DNA version each frame used.
+3. **Invalidate derived sprites:** Mark derived frames as `"status": "superseded_by_rollback_v2"` in sheet manifests. Do not delete PNGs — git preserves history; manifests flag them as non-authoritative.
+4. **Revised master candidate:** Generate a new master under the revision brief; full Mode 1 approval loop. Human must approve the new master before any v2 DNA exists. Only after approval does `dna_extractor.py` produce `[character_id]_v2.json`.
+5. **Commit v2 DNA:** Git message: `"DNA revised: [character_name] v1 → v2 — [reason]"`. Retain `_v1.json` permanently. Update `CONTINUITY_MANIFEST.md`: v1 marked `"status": "superseded", "superseded_by": "v2"`; v2 active.
+6. **Regenerate derived profiles:** Rebuild all derived profiles from v2 DNA; each through approval. Commit per profile: `"DNA rollback regeneration: [character_name] [profile] v2"`.
 
 ### 4.4 DNA Extraction Process
 
@@ -308,10 +322,12 @@ After lock confirmation:
 4. Confirm light source direction from shadow placement
 5. Identify character-unique colors vs master palette colors
 6. Display extraction summary and prompt: *"Are there any features of this character not visible in this sprite? Add them to occluded_features before locking."*
-7. Write `dna/characters/[character_id].json`
+7. Write `dna/characters/[character_id]_v1.json` — version tracks **approved master design count**, not attempt count (CHANGE-029). First lock is always `_v1`.
 8. Update `CONTINUITY_MANIFEST.md`
 9. Regenerate project comparison sheet
 10. Git commit: `"DNA locked: [character_name] v1"`
+
+**Versioned files:** DNA JSON filenames use `[character_id]_vN.json` (e.g. `sam_vendor_v1.json`, `sam_vendor_v2.json` after a formal rollback). Older versions stay in git; never delete prior JSON versions.
 
 ---
 
@@ -812,11 +828,18 @@ After Boot Training, before any production work:
 ### 9.3 Continuous Training Protocol
 
 After every 5 production sprites:
+
+**Step 0 — Re-anchor (REFINEMENT-025A):** Read `am-pixel/CONSTITUTION.md` in full. Output a single sentence confirming all nine rules are in active context before the cycle continues. If any rule required re-reading the SPEC, note that. Write `logs/decision_log.md` entry if any rule required re-reading.
+
+**Step 0b — Decision log catch-up (CHANGE-027):** Review `logs/decision_log.md` for the previous five-sprite cycle. Add entries for any quality or process decisions made during that cycle that were not logged at the time.
+
 1. Rebuild the weakest sprite in the full project set
 2. Extract lessons from the strongest sprite
 3. Search for new pixel art resources — integrate if quality threshold met
 4. Review and update `MISTAKE_TAXONOMY.md`
 5. Approved production assets added to fine-tuning dataset
+
+**Step 3b — Failure cluster review (CHANGE-031):** If the **running pass rate** (recent production batch) is **below 90%**, categorize failing sprites by rubric category and asset type, log the cluster analysis in `logs/training_log.md`, select one targeted intervention, and apply the **maximum escalation rule:** three consecutive diagnosis cycles without batch improvement → document in `logs/BLOCKERS.md` for human review.
 
 Root cause analysis triggers if any sprite requires 5+ rebuild cycles.
 
@@ -933,8 +956,8 @@ The web UI skeleton (working chat panel + image preview + approve/reject control
   2. AMD GPU → ROCm (PyTorch-supported; near-equivalent performance)
   3. Apple Silicon → MPS — Metal Performance Shaders (PyTorch M1/M2/M3 support)
   4. Other GPU → OpenCL via PyTorch extensions
-  5. No GPU → CPU (inference is usable; training is slow but functional — plan for hours not minutes)
-  - Cloud GPU rental (RunPod, Vast.ai, Lambda Labs) recommended for CPU-only machines doing training runs
+  5. No GPU → CPU (inference is usable at **1–10 tokens/sec**; training at Phase 4 corpus scale is **measured in months** on CPU — **cloud GPU is required** for CPU-only machines; see ROADMAP Phase 4 Hardware Reality Check for tier estimates)
+  - Cloud GPU rental (RunPod, Vast.ai, Lambda Labs) **required** for Phase 4 training on CPU-only hardware; budget and timing per ROADMAP
   - All device references in code route through the detection utility — no hardcoded `"cuda"` strings anywhere
 - **Image tooling:** Pillow for pixel-level manipulation and validation
 - **Sheet management:** Custom Python tools using layout manifests
@@ -969,11 +992,14 @@ A stub `model/architecture/COMPONENT_COMPOSITING_NOTES.md` is initialized in Pha
 
 ---
 
-*AM Pixel Specification v1.4 | Absentmind Studio*
+*AM Pixel Specification v1.5 | Absentmind Studio*
 
 ---
 
 ## Changelog
+
+### v1.5 — 2026-04-21
+- **CHANGE-025–031, REFINEMENT-025A:** CONSTITUTION cross-refs; compliance layer in §3.3; DNA rollback procedure + cost warning (§4.3); versioned DNA filenames (§4.4); Continuous Training Protocol — re-anchor, decision log catch-up, failure cluster / escalation (§9.3); CPU training reality + cloud GPU (§14).
 
 ### v1.3 — 2026-04-12
 - **CHANGE-010:** §3.1 — 2D positional encoding requirement added. 1D encodings (sinusoidal or RoPE) encode sequence distance, not canvas proximity — incompatible with structure-aware token ordering which scrambles spatial sequence position. Each token embedding now sums three components: palette index embedding + learned X coordinate embedding + learned Y coordinate embedding. DNA conditioning tokens use a separate learned embedding type and do not carry canvas coordinates.

@@ -1,4 +1,4 @@
-# AM Pixel — v1.4
+# AM Pixel — v1.5
 **Absentmind Studio — AI Sprite Generator & Game Asset Manager**
 
 This folder contains the complete specification and execution documents for AM Pixel. If you are OpenClaw, read these documents in the order listed before doing anything else.
@@ -9,6 +9,7 @@ This folder contains the complete specification and execution documents for AM P
 
 | Document | Purpose | Read Order |
 |----------|---------|------------|
+| [CONSTITUTION.md](CONSTITUTION.md) | Nine non-negotiable rules — read first, every session | **0th (before all)** |
 | [SPEC.md](SPEC.md) | Full technical specification — architecture, DNA system, all generation modes, evaluation rubrics, training pipeline | 1st |
 | [ROADMAP.md](ROADMAP.md) | Phased execution plan — every task, every gate, in order | 2nd |
 | [GENRE_TAXONOMY.md](GENRE_TAXONOMY.md) | Genre tiers, mastery definitions, progression rules | 3rd |
@@ -17,6 +18,7 @@ This folder contains the complete specification and execution documents for AM P
 | [BIBLE_CHANGELOG.md](BIBLE_CHANGELOG.md) | Authoritative per-document history and Bible hygiene rules — use when tracing what changed and why | After core set |
 | [PROPOSED_CHANGES_001.md](PROPOSED_CHANGES_001.md) | Series 001 — fully implemented; kept as archive reference | Reference |
 | [PROPOSED_CHANGES_002.md](PROPOSED_CHANGES_002.md) | Series 002 — merged into Bible (v1.3+); kept as rationale archive | Reference |
+| [PROPOSED_CHANGES_003.md](PROPOSED_CHANGES_003.md) | Series 003 — drift prevention & compliance; merged into Bible (v1.5+); kept as proposal archive | Reference |
 
 ---
 

@@ -1,5 +1,5 @@
 # AM Pixel — Project Folder Structure
-**Absentmind Studio | Version 1.4**
+**Absentmind Studio | Version 1.5**
 
 OpenClaw initializes this exact structure in Phase 0. Every directory and file listed here must exist before Phase 1 begins. Placeholder files use `.gitkeep`.
 
@@ -9,6 +9,7 @@ OpenClaw initializes this exact structure in Phase 0. Every directory and file l
 am-pixel/
 │
 ├── README.md                          ← Links to all spec documents; orientation hub for OpenClaw
+├── CONSTITUTION.md                    ← Nine non-negotiable rules — read first, every session, before any other document (CHANGE-025)
 ├── SPEC.md                            ← Full technical specification
 ├── ROADMAP.md                         ← Phased execution plan
 ├── GENRE_TAXONOMY.md                  ← Genre tiers and mastery definitions
@@ -16,6 +17,7 @@ am-pixel/
 ├── OPENCLAW_PROMPT.md                 ← Prompt for OpenClaw initialization
 ├── BIBLE_CHANGELOG.md                 ← Complete authoritative change history for all Bible documents; log changes here before applying to any document
 ├── PROPOSED_CHANGES_002.md            ← Series 002 archive — substantive items (CHANGE-010–023) merged into Bible; document retained for rationale and review history
+├── PROPOSED_CHANGES_003.md            ← Series 003 — drift prevention & compliance; merged into Bible when accepted
 │
 ├── knowledge/                         ← Boot Training knowledge base
 │   ├── HARDWARE_CONSTRAINTS.md        ← SNES + 5 other platforms
@@ -93,7 +95,9 @@ am-pixel/
 │   ├── palette_validator.py           ← Checks sprite against palette constraints
 │   ├── dna_diff.py                    ← Visual diff of sprite vs DNA specification
 │   ├── dna_extractor.py               ← Extracts DNA JSON from approved sprite
-│   ├── rubric_scorer.py               ← Selects correct rubric (A/B/C) by asset type, returns score breakdown
+│   ├── compliance.py                  ← Emergency halt, DNA lock / phase / training / provenance gates (CHANGE-028)
+│   ├── dna_lock_verifier.py           ← Post-lock verification — DNA vs master sprite via dna_diff (CHANGE-028)
+│   ├── rubric_scorer.py               ← Rubric A/B/C — automated evidence required for scores 70+ (CHANGE-028)
 │   ├── banding_detector.py            ← Detects horizontal/vertical color banding
 │   ├── outline_checker.py             ← Identifies pure black outlines (must be local color)
 │   ├── anti_aliasing_detector.py      ← Flags sub-pixel blending (not allowed in SNES style)
@@ -102,7 +106,7 @@ am-pixel/
 │   ├── layer_compositor.py            ← Assembles parallax layers at scroll offsets for evaluation
 │   ├── effect_timing_evaluator.py     ← Evaluates battle effect timing and weight at playback speed
 │   ├── icon_grammar_checker.py        ← Validates icon set visual consistency within categories
-│   ├── sheet_manager.py               ← Non-destructive sprite sheet operations
+│   ├── sheet_manager.py               ← Non-destructive sprite sheet operations — supports `superseded_by_rollback_v2` frame status (CHANGE-029)
 │   ├── comparison_sheet.py            ← Generates side-by-side project character comparison
 │   ├── continuity_checker.py          ← Runs all three continuity checks
 │   ├── vlm_critic.py                  ← STUB — documented interface only. VLM-based semantic evaluation for contextually ambiguous rubric criteria; only invoked on borderline automated failures (CHANGE-021)
@@ -145,7 +149,7 @@ am-pixel/
 │
 ├── dna/                               ← Character DNA store
 │   ├── CONTINUITY_MANIFEST.md         ← Master continuity tracking document
-│   └── characters/                    ← One JSON file per approved character
+│   └── characters/                    ← Versioned DNA JSON: `[character_id]_vN.json` (CHANGE-029); prior versions retained in git
 │       └── .gitkeep
 │
 ├── sheets/                            ← Sprite sheet layout manifests
@@ -222,15 +226,17 @@ am-pixel/
 │   └── gauntlet_report.md             ← Gauntlet results and lessons
 │
 ├── logs/                              ← System operation logs — ALL initialized as empty placeholder files in Phase 0
-│   ├── hardware.log                   ← Hardware detection result: GPU model, VRAM, backend, baseline inference speed
+│   ├── hardware.log                   ← Hardware detection result: GPU model, VRAM, backend, baseline inference speed (+ Phase 4 tier estimate — CHANGE-030)
+│   ├── session_log.md                 ← Append-only Session Start Summaries — Startup Protocol (CHANGE-026)
+│   ├── decision_log.md                ← Reasoning log for non-mechanical decisions — schema in header (CHANGE-027)
 │   ├── generation_log.md              ← Log of every generation attempt with scores
 │   ├── rebuild_log.md                 ← Log of every rebuild with root cause
-│   ├── training_log.md                ← Training run summaries + architecture experiment results
+│   ├── training_log.md                ← Training run summaries + architecture experiment results + Phase 8 failure clusters (CHANGE-031)
 │   ├── evaluation.log                 ← Evaluation engine accuracy tracking
 │   ├── errors.log                     ← Runtime errors and stack traces
 │   ├── freeform_log.md                ← Log of all Mode 7 freeform generation outputs (reference only — not project assets)
 │   ├── BLOCKERS.md                    ← Documented blockers awaiting human input
-│   └── phase_gates.md                 ← Record of phase gate completions with evidence
+│   └── phase_gates.md                 ← Record of phase gate completions; must contain `PHASE4_ARCHITECTURE_REVIEW: APPROVED` before training (CHANGE-028)
 │
 ├── tests/                             ← Automated tests for all tooling
 │   ├── test_palette_validator.py
@@ -238,7 +244,11 @@ am-pixel/
 │   ├── test_rubric_scorer.py
 │   ├── test_sheet_manager.py
 │   ├── test_continuity_checker.py
+│   ├── test_compliance.py             ← Compliance gates + emergency halt (CHANGE-028)
 │   └── test_export.py
+│
+├── git-hooks/                         ← Install to `.git/hooks/` — pre-commit runs compliance check (CHANGE-028)
+│   └── pre-commit
 │
 ├── requirements.txt                   ← Python dependencies
 ├── requirements_hardware.txt          ← Hardware-specific dependencies (CUDA/ROCm/MPS variants)
@@ -249,8 +259,8 @@ am-pixel/
 
 ## File Naming Conventions
 
-**DNA files:** `dna/characters/[character_id].json`
-Example: `dna/characters/sam_vendor.json`
+**DNA files:** `dna/characters/[character_id]_vN.json` — version N = approved master design count (CHANGE-029).
+Example: `dna/characters/sam_vendor_v1.json`
 
 **Sheet manifests:** `sheets/[character_id]_[profile].json`
 Example: `sheets/sam_vendor_world.json`
@@ -281,11 +291,20 @@ BLOCKER: [short description] — awaiting human input
 
 ---
 
-*AM Pixel Folder Structure v1.4 | Absentmind Studio*
+*AM Pixel Folder Structure v1.5 | Absentmind Studio*
 
 ---
 
 ## Changelog
+
+### v1.5 — 2026-04-21
+- **CHANGE-025:** `CONSTITUTION.md` — nine rules; read first every session.
+- **CHANGE-026:** `logs/session_log.md` — Session Start Summaries.
+- **CHANGE-027:** `logs/decision_log.md` — reasoning log with schema header.
+- **CHANGE-028:** `tools/compliance.py`, `tools/dna_lock_verifier.py`, `tests/test_compliance.py`, `git-hooks/pre-commit`; rubric evidence requirement; `phase_gates.md` marker for Phase 4 architecture approval.
+- **CHANGE-029:** `dna/characters/` — versioned JSON filenames `[character_id]_vN.json`; `sheet_manager` documents `superseded_by_rollback_v2`.
+- **CHANGE-030:** `hardware.log` note for Phase 4 tier estimates.
+- **PROPOSED_CHANGES_003.md** listed at top level.
 
 ### v1.3 — 2026-04-12
 - **CHANGE-017:** data/pipeline/ — added view_pair_detector.py (identifies candidate view pairs within sprite sheets via palette similarity and proportion heuristics) and pair_annotator.py (presents candidates for human confirmation, writes confirmed pairs with view_pair_id and direction labels).

@@ -1,5 +1,5 @@
 # AM Pixel Bible — Document Changelog
-**Absentmind Studio | Version 1.4**
+**Absentmind Studio | Version 1.5**
 
 This document is the authoritative change history for every document in the AM Pixel Bible. It was initially compiled retroactively from project conversation history. All future changes must be logged here in real time before being applied to any document.
 
@@ -15,6 +15,7 @@ Each section covers one document. Each version entry lists what changed and why.
 - v1.2 — Second major revision (PROPOSED_CHANGES_001 implementation)
 - v1.3 — Third major revision (PROPOSED_CHANGES_002 implementation)
 - v1.4 — Fourth alignment revision: canonical tree after `bible-v1.3-apr13` distinguished per Document Hygiene Rules (all documents incremented together; no additional CHANGE series delta)
+- v1.5 — Fifth revision (**PROPOSED_CHANGES_003**): CONSTITUTION.md; compliance gates + emergency halt; session_log / decision_log; Startup Protocol (Rule 11); Hardware Reality table; DNA rollback procedure; Phase 8 failure-cluster protocol; mode module docstrings; rubric evidence requirement
 
 **Bible-wide version rule:** All documents must share the same version number at the end of any update session. A document that has no content changes in a given session still increments its version to maintain alignment. The exception is ROOT_README.md which tracks separately as the umbrella document.
 
@@ -395,7 +396,7 @@ Status: Fully implemented. Document archived.
 
 ---
 
-## PROPOSED_CHANGES_002.md (Series 002 — current staging document)
+## PROPOSED_CHANGES_002.md (Series 002 — archive)
 
 ### v0.1 — Initial Batch
 - CHANGE-010: 2D positional encodings
@@ -422,6 +423,22 @@ Status: All changes (CHANGE-010 through CHANGE-023) implemented into Bible v1.3 
 
 ---
 
+## PROPOSED_CHANGES_003.md (Series 003 — archive)
+
+### v0.2 — Drift prevention & compliance
+- CHANGE-025: CONSTITUTION.md (nine rules)
+- CHANGE-026: Session Startup Protocol → session_log.md
+- CHANGE-027: decision_log.md
+- CHANGE-028: compliance.py, dna_lock_verifier.py, rubric evidence, pre-commit hook, mode docstrings
+- CHANGE-029: DNA rollback procedure; versioned DNA filenames
+- CHANGE-030: Hardware Reality table; SPEC §14 CPU clarification
+- CHANGE-031: Phase 8 failure cluster analysis + three-cycle escalation
+- REFINEMENT-025A: Continuous Training re-anchor (§9.3)
+
+Status: Merged into Bible v1.5. Document retained as proposal archive.
+
+---
+
 ## Document Hygiene Rules (Going Forward)
 
 1. Every change to any Bible document gets an entry in this file first
@@ -435,5 +452,5 @@ Status: All changes (CHANGE-010 through CHANGE-023) implemented into Bible v1.3 
 
 ---
 
-*AM Pixel Bible Changelog v1.4 | Absentmind Studio*
+*AM Pixel Bible Changelog v1.5 | Absentmind Studio*
 *v1.0 compiled retroactively | ongoing entries in real time*

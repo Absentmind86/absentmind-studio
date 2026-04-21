@@ -60,12 +60,13 @@ The short form **AM Studio** is the everyday reference.
 absentmind-studio/
 ├── README.md                  ← You are here
 ├── am-pixel/
+│   ├── CONSTITUTION.md        ← Nine non-negotiable rules (read first)
 │   ├── SPEC.md                ← Full technical specification
 │   ├── ROADMAP.md             ← Phased execution plan with quality gates
 │   ├── GENRE_TAXONOMY.md      ← Genre list, tiers, mastery definitions
-│   ├── FOLDER_STRUCTURE.md    ← Complete project file structure
+│   ├── FOLDER_STRUCTURE.md    ← Complete on-disk layout
 │   ├── OPENCLAW_PROMPT.md     ← Prompt to initialize OpenClaw execution
-│   └── src/                   ← OpenClaw builds here
+│   └── …                      ← model/, data/, pipeline/, tools/, etc.
 └── am-audio/
     └── (planned)
 ```
@@ -74,11 +75,14 @@ absentmind-studio/
 
 ## Status
 
-AM Pixel Bible documents are at **v1.4** (`SPEC`, `ROADMAP`, `FOLDER_STRUCTURE`, `OPENCLAW_PROMPT`, `GENRE_TAXONOMY`, `am-pixel/README.md`). **PROPOSED_CHANGES_001** is fully implemented in the Bible (document retained as archive reference). **PROPOSED_CHANGES_002** substantive items are merged into the Bible; the file remains as a rationale archive. The spec is working and executable — OpenClaw should begin from `am-pixel/OPENCLAW_PROMPT.md`. This remains a living document set; refinements land as they are validated.
+AM Pixel Bible documents are at **v1.5** (`CONSTITUTION`, `SPEC`, `ROADMAP`, `FOLDER_STRUCTURE`, `OPENCLAW_PROMPT`, `GENRE_TAXONOMY`, `am-pixel/README.md`). **PROPOSED_CHANGES_001** and **Series 002** are merged into the Bible (archives retained). **PROPOSED_CHANGES_003** (drift prevention, compliance gates, session logs) is merged into v1.5; the file remains as a proposal archive. OpenClaw should begin from `am-pixel/CONSTITUTION.md`, then `am-pixel/OPENCLAW_PROMPT.md`. This remains a living document set.
 
 ---
 
 ## Changelog
+
+### v1.5 — 2026-04-21
+- Bible **v1.5**: Series 003 — CONSTITUTION.md, compliance tooling, session/decision logs, Startup Protocol (Rule 11), hardware reality table, DNA rollback procedure, Phase 8 failure-cluster protocol.
 
 ### v1.4 — 2026-04-19
 - Bible **v1.4**: per Document Hygiene Rules, canonical post-`bible-v1.3-apr13` revision is no longer labeled v1.3; Status and all `am-pixel` headers/footers updated; archive folder **`bible-v1.4`**

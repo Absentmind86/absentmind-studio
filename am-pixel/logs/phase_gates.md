@@ -27,6 +27,9 @@ Date completed:
 Evidence:
 
 ## Phase 4 — Model Architecture & Initial Training
+
+**PHASE4_ARCHITECTURE_REVIEW: PENDING** — Set to `APPROVED` only after human reviews `model/architecture/` and `IMPLEMENTATION_NOTES.md` (required for `training_run_gate()` — CHANGE-028).
+
 Date completed:
 Evidence:
 Sequence length experiment result:
