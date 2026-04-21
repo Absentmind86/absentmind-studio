@@ -74,7 +74,7 @@ absentmind-studio/
 
 ## Status
 
-AM Pixel Bible documents are at **v1.4** (`SPEC`, `ROADMAP`, `FOLDER_STRUCTURE`, `OPENCLAW_PROMPT`, `GENRE_TAXONOMY`, `am-pixel/README.md`). **PROPOSED_CHANGES_001** is fully implemented in the Bible (document retained as archive reference). **PROPOSED_CHANGES_002** is the active staging document for the next Bible revision. The spec is working and executable — OpenClaw should begin from `am-pixel/OPENCLAW_PROMPT.md`. This remains a living document set; refinements land as they are validated.
+AM Pixel Bible documents are at **v1.4** (`SPEC`, `ROADMAP`, `FOLDER_STRUCTURE`, `OPENCLAW_PROMPT`, `GENRE_TAXONOMY`, `am-pixel/README.md`). **PROPOSED_CHANGES_001** is fully implemented in the Bible (document retained as archive reference). **PROPOSED_CHANGES_002** substantive items are merged into the Bible; the file remains as a rationale archive. The spec is working and executable — OpenClaw should begin from `am-pixel/OPENCLAW_PROMPT.md`. This remains a living document set; refinements land as they are validated.
 
 ---
 

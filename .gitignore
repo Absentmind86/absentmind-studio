@@ -57,6 +57,10 @@ cover/
 
 # Django stuff:
 *.log
+# AM Pixel — tracked Phase 0 placeholders (FOLDER_STRUCTURE.md)
+!am-pixel/logs/hardware.log
+!am-pixel/logs/evaluation.log
+!am-pixel/logs/errors.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal

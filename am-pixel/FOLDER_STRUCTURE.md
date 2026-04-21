@@ -15,7 +15,7 @@ am-pixel/
 ├── FOLDER_STRUCTURE.md                ← This document
 ├── OPENCLAW_PROMPT.md                 ← Prompt for OpenClaw initialization
 ├── BIBLE_CHANGELOG.md                 ← Complete authoritative change history for all Bible documents; log changes here before applying to any document
-├── PROPOSED_CHANGES_002.md            ← Current staging document for proposed changes under discussion; items here are not yet committed to spec files
+├── PROPOSED_CHANGES_002.md            ← Series 002 archive — substantive items (CHANGE-010–023) merged into Bible; document retained for rationale and review history
 │
 ├── knowledge/                         ← Boot Training knowledge base
 │   ├── HARDWARE_CONSTRAINTS.md        ← SNES + 5 other platforms
@@ -75,6 +75,7 @@ am-pixel/
 │   │   └── splitter.py                ← Train/validation split
 │   ├── golden/                        ← Tier 1 — manually curated Golden Dataset (3,000–5,000 sprites, human-verified)
 │   │   ├── CONTRIBUTORS.md            ← Human record of Golden Dataset contributors: handle, anonymity preference, accepted sprites, tier
+│   │   ├── curation_log.md            ← Per-sprite curation record — source, extraction method, reviewer (CHANGE-019)
 │   │   └── .gitkeep
 │   ├── corpus/                        ← Tier 2 — broad scraped corpus
 │   │   ├── train/                     ← Training split
@@ -303,6 +304,8 @@ BLOCKER: [short description] — awaiting human input
 
 ### v1.4 — 2026-04-19
 - Bible **v1.4**: per Document Hygiene Rules, synchronized with all other Bible documents; archive folder **`bible-v1.4`** (no folder-tree delta in this entry).
+- **CHANGE-019:** `data/golden/curation_log.md` added to tree — per-sprite Golden Dataset curation record (was specified in Series 002 but missing from listing).
+- **Series 002:** Phase 0 scaffold created on disk for all listed paths (Python stubs, UI placeholders, `TRAINING_PROVENANCE_MANIFEST.json`, logs, tests, requirements). `PROPOSED_CHANGES_002.md` header updated to archive/merged status.
 
 ### v1.2 — 2026-04-11
 - **CHANGE-003:** model/ — added hardware/ subdirectory with detector.py. All device references throughout codebase must route through this utility. No hardcoded "cuda" strings anywhere.

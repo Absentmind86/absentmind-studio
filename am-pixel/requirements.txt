@@ -1,0 +1,9 @@
+# AM Pixel — core dependencies (pin versions in Phase 1+)
+torch
+fastapi
+uvicorn
+pydantic
+numpy
+Pillow
+httpx
+anthropic

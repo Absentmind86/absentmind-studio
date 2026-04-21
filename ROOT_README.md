@@ -63,9 +63,9 @@ absentmind-studio/
 │   ├── SPEC.md                ← Full technical specification
 │   ├── ROADMAP.md             ← Phased execution plan with quality gates
 │   ├── GENRE_TAXONOMY.md      ← Genre list, tiers, mastery definitions
-│   ├── FOLDER_STRUCTURE.md    ← Complete project file structure
+│   ├── FOLDER_STRUCTURE.md    ← Complete on-disk layout (model/, data/, pipeline/, tools/, ui/, …)
 │   ├── OPENCLAW_PROMPT.md     ← Prompt to initialize OpenClaw execution
-│   └── src/                   ← OpenClaw builds here
+│   └── (implementation tree)  ← See FOLDER_STRUCTURE.md — Phase 0 stubs in place
 └── am-audio/
     └── (planned)
 ```
@@ -74,7 +74,7 @@ absentmind-studio/
 
 ## Status
 
-AM Pixel specification is at v1.2 (SPEC, ROADMAP, FOLDER_STRUCTURE, OPENCLAW_PROMPT) with ongoing architectural refinements tracked in `am-pixel/PROPOSED_CHANGES_002.md`. The spec is considered working and executable — OpenClaw can begin from `am-pixel/OPENCLAW_PROMPT.md`. Refinements are applied as they are validated; this is a living document set and gaps will be caught and addressed as the project matures.
+AM Pixel specification is at v1.4 (`am-pixel/SPEC`, `ROADMAP`, `FOLDER_STRUCTURE`, `OPENCLAW_PROMPT`, `GENRE_TAXONOMY`). Series 002 refinements are integrated into those documents; `am-pixel/PROPOSED_CHANGES_002.md` is retained as an archive of the original proposals. The spec is considered working and executable — OpenClaw can begin from `am-pixel/OPENCLAW_PROMPT.md`. Refinements are applied as they are validated; this is a living document set and gaps will be caught and addressed as the project matures.
 
 ---
 

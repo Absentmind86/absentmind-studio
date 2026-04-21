@@ -1,7 +1,9 @@
 # AM Pixel — Proposed Changes & Additions (Series 002)
-**Working Document | Version 0.3**
+**Archive | Version 0.3**
 
-This document tracks proposed changes identified through external architecture review sessions. Items here are under discussion and have not been committed to any spec file. Each item includes the rationale, the affected documents, and the proposed implementation.
+**Status:** Substantive proposals (CHANGE-010 through CHANGE-023) are **merged into the Bible** (`SPEC.md`, `ROADMAP.md`, `FOLDER_STRUCTURE.md`, `OPENCLAW_PROMPT.md`, and related docs). The Phase 0 **on-disk** layout and stubs under `am-pixel/` match this series. This file stays in the repo as the **original rationale and review record** — not as a pending work queue.
+
+This document recorded proposed changes identified through external architecture review sessions. Each item includes the rationale, the affected documents, and the proposed implementation.
 
 All changes in this document were identified after v1.2 of the spec was locked. They do not supersede PROPOSED_CHANGES.md (Series 001) — that document is now fully implemented in v1.2.
 

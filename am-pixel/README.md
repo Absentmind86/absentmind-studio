@@ -16,7 +16,7 @@ This folder contains the complete specification and execution documents for AM P
 | [OPENCLAW_PROMPT.md](OPENCLAW_PROMPT.md) | The initialization prompt — contains confirmation requirements and non-negotiable rules | Already held |
 | [BIBLE_CHANGELOG.md](BIBLE_CHANGELOG.md) | Authoritative per-document history and Bible hygiene rules — use when tracing what changed and why | After core set |
 | [PROPOSED_CHANGES_001.md](PROPOSED_CHANGES_001.md) | Series 001 — fully implemented; kept as archive reference | Reference |
-| [PROPOSED_CHANGES_002.md](PROPOSED_CHANGES_002.md) | Series 002 — staging for the next Bible revision (not yet merged) | Reference |
+| [PROPOSED_CHANGES_002.md](PROPOSED_CHANGES_002.md) | Series 002 — merged into Bible (v1.3+); kept as rationale archive | Reference |
 
 ---
 
