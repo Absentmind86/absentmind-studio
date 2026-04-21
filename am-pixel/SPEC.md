@@ -114,7 +114,7 @@ The data pipeline must log the distribution of all four pixel categories across 
 The training corpus is divided into two tiers with different quality standards and different roles in the training pipeline.
 
 **Tier 1 — Golden Dataset (primary quality signal):**
-A manually curated set of 3,000–5,000 sprites, individually verified to be correctly extracted, SNES-aesthetic compliant, correctly palette-indexed, and free of pillow shading and banding. Every sprite in this set has been human-reviewed. This is the most important work in Phase 3. It is not a cleanup pass after scraping — it is the primary Phase 3 deliverable. Building it is slow and cannot be rushed. Commissioned sprites and community-contributed CC0 sprites (see CHANGE-024) are preferred sources over scraped sprites for this tier. Golden Dataset sprites are stored in `data/golden/`.
+A manually curated set of 3,000–5,000 sprites, individually verified to be correctly extracted, SNES-aesthetic compliant, correctly palette-indexed, and free of pillow shading and banding. Every sprite in this set has been human-reviewed. This is the most important work in Phase 3. It is not a cleanup pass after scraping — it is the primary Phase 3 deliverable. Building it is slow and cannot be rushed. Commissioned sprites and community-contributed CC0 sprites (see CHANGE-024 — human initiative only, OpenClaw must not action contributor outreach) are preferred sources over scraped sprites for this tier. Golden Dataset sprites are stored in `data/golden/`.
 
 **Tier 2 — Broad Corpus (volume and variety):**
 Algorithmically scraped and filtered sprites, target 30,000–50,000. Quality is lower and inconsistent. Used for Stage 1 foundation training to give the model exposure to variety. Stored in `data/corpus/train/` and `data/corpus/validation/`.
@@ -355,7 +355,7 @@ After lock confirmation:
 - Every sheet frame individually evaluated against rubric AND DNA continuity
 
 **Portrait Profile:**
-Portrait art is a standard profile type available to any character. Portraits are larger canvas (typically 48x48 to 64x64), higher detail, more expressive than battle sprites. When a portrait profile is requested, the system generates a forward-facing bust portrait first, runs approval loop, then generates any expression variants (neutral, happy, sad, angry, surprised) using the approved portrait as the DNA source. Portrait palette is derived from character DNA but may use additional detail colors (max 4 unique) to support the higher resolution.
+Portrait art is a standard profile type available to any character. Portraits are larger canvas (typically 48x48 to 64x64), higher detail, more expressive than battle sprites. When a portrait profile is requested, the system generates a forward-facing bust portrait first, runs approval loop, then generates any expression variants (neutral, happy, sad, angry, surprised) using the approved portrait as the DNA source. Portrait palette is derived from character DNA but may use additional detail colors (max 4 unique, portrait profile-scoped only) to support the higher resolution. These portrait-specific colors do not count against the character-wide 2 unique color cap in §7.1 — they are profile-local and do not appear in world or battle sprites.
 
 **Large-Format / Multi-Tile Boss Mode:**
 Standard battle sprites max at 64x64. Large bosses — those spanning multiple tile slots — require a multi-tile composition system. When large-format flag is set:
@@ -1000,6 +1000,7 @@ A stub `model/architecture/COMPONENT_COMPOSITING_NOTES.md` is initialized in Pha
 
 ### v1.5 — 2026-04-21
 - **CHANGE-025–031, REFINEMENT-025A:** CONSTITUTION cross-refs; compliance layer in §3.3; DNA rollback procedure + cost warning (§4.3); versioned DNA filenames (§4.4); Continuous Training Protocol — re-anchor, decision log catch-up, failure cluster / escalation (§9.3); CPU training reality + cloud GPU (§14).
+- **Doc alignment (post-audit):** §3.2 Tier 1 — CHANGE-024 explicitly marked human-initiative only (no OpenClaw contributor outreach). §5.1 / §7.1 — portrait max-4 detail colors clarified as profile-local and excluded from character-wide 2 unique-color cap for world/battle sprites.
 
 ### v1.3 — 2026-04-12
 - **CHANGE-010:** §3.1 — 2D positional encoding requirement added. 1D encodings (sinusoidal or RoPE) encode sequence distance, not canvas proximity — incompatible with structure-aware token ordering which scrambles spatial sequence position. Each token embedding now sums three components: palette index embedding + learned X coordinate embedding + learned Y coordinate embedding. DNA conditioning tokens use a separate learned embedding type and do not carry canvas coordinates.

@@ -78,7 +78,7 @@ If AI reviewers, advisors, or future contributors raise generation speed as a co
 ## Key Architecture Decisions
 
 - **Token space:** Discrete palette indices, not RGB values — enables exact DNA enforcement
-- **Generation order:** Structure-aware (transparent → outline → fill → shade → detail), not raster order
+- **Generation order:** Structure-aware, not raster order. Foundation training uses four categories: transparent → outline → structural → non-structural. Full five-category split (transparent → outline → fill → shade → detail) is available for fine-tuning via `--full-five-category` flag. See SPEC §3.2 and CHANGE-014.
 - **Positional encoding:** 2D (canvas X + canvas Y), not 1D sequence position — required for structure-aware ordering to preserve spatial coherence
 - **Hardware:** Universal — CUDA, ROCm, MPS, or CPU via `model/hardware/detector.py`
 - **Three rubrics:** Rubric A (characters/effects), Rubric B (tilesets), Rubric C (parallax)
@@ -99,6 +99,9 @@ If AI reviewers, advisors, or future contributors raise generation speed as a co
 ---
 
 ## Changelog
+
+### v1.5 — 2026-04-21
+- **Doc alignment (post-audit):** Key Architecture — generation order updated to four-category foundation default and optional five-category fine-tuning (SPEC §3.2, CHANGE-014).
 
 ### v1.4 — 2026-04-19
 - Bible **v1.4**: per Document Hygiene Rules, canonical post-`bible-v1.3-apr13` revision is no longer labeled v1.3; all Bible documents and umbrella README set to **1.4**; archive folder **`bible-v1.4`**

@@ -50,7 +50,7 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Audit all training and inference scripts — confirm zero hardcoded `"cuda"` strings; all device references must route through `model/hardware/detector.py`
 - [ ] Create `pipeline/modes/mode7_freeform.py` stub with documented interface
 - [ ] Initialize `ui/` directory — build working web UI skeleton: chat panel, 1×/4× image preview, approve/reject/adjust controls, project tabs, freeform tab. Must be functional before Phase 5.
-- [ ] Initialize empty log placeholder files in `logs/` (hardware.log, training.log, evaluation.log, generation_log.md, rebuild_log.md, errors.log, BLOCKERS.md, phase_gates.md)
+- [ ] Initialize all log placeholder files in `logs/` per the canonical list in `FOLDER_STRUCTURE.md` — that document is the authoritative checklist for this step, not this bullet. Do not use this bullet as a complete list.
 - [ ] Add `am-pixel/CONSTITUTION.md` — nine non-negotiable rules; read first every session (CHANGE-025)
 - [ ] Add `logs/session_log.md` and `logs/decision_log.md` with schema headers (CHANGE-026, CHANGE-027)
 - [ ] Implement `tools/compliance.py` and `tools/dna_lock_verifier.py`; add `tests/test_compliance.py` — gates validated (CHANGE-028)
@@ -138,8 +138,8 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
   - Canonical light source direction (default: top-left)
   - Lighting variant rules for environment contexts
 - [ ] Initialize `CONTINUITY_MANIFEST.md` (empty, ready for entries)
-- [ ] Initialize `CHARACTER_DNA/` directory
-- [ ] Initialize `SHEET_LAYOUT/` directory
+- [ ] Initialize `dna/characters/` directory
+- [ ] Initialize `sheets/` directory
 
 ### Completion Gate
 - [ ] All four style bible documents complete and committed
@@ -317,7 +317,7 @@ The `hardware.log` baseline speed (tokens/sec on a 16×16 test sprite, logged in
   - Engine must correctly identify 90%+ of documented failure modes
 - [ ] Run 5 freeform Mode 7 test generations
   - Validate DNA/style constraints are correctly bypassed
-  - Confirm outputs land in `assets/freeform/` only
+  - Confirm outputs land in `freeform/` only
   - Confirm continuity manifest is NOT updated by freeform outputs
 - [ ] Validate full web UI approval workflow end-to-end
   - Generate a practice sprite → preview in web UI at 1x and 4x → approve via UI → confirm asset committed correctly
@@ -471,6 +471,7 @@ Do not silently fail. Do not work around a fundamental problem without documenti
 
 ### v1.5 — 2026-04-21
 - **Series 003 (CHANGE-025–031):** Phase 0 expanded — CONSTITUTION.md, session_log, decision_log, compliance.py + tests, pre-commit hook, emergency halt test, Hardware Reality Check logging. Phase 4 — Hardware Reality table before tasks (CHANGE-030). Phase 7 — mode docstrings + compliance integration gates. Phase 8 — failure cluster analysis + three-cycle escalation (CHANGE-031).
+- **Doc alignment (post-audit):** Phase 2 — `dna/characters/` and `sheets/` (not legacy CHARACTER_DNA / SHEET_LAYOUT). Phase 0 — log placeholders defer to canonical list in FOLDER_STRUCTURE.md. Phase 5 — freeform outputs to `freeform/` (not `assets/freeform/`); v1.1 changelog line corrected to match.
 
 ### v1.3 — 2026-04-12
 - **CHANGE-019:** Phase 3 completely rewritten with two-tier corpus strategy. 3× time allocation warning added — manual curation cannot be automated or rushed. Tier 1 Golden Dataset (3,000–5,000 sprites, manually verified) established as primary Phase 3 deliverable. Tier 2 broad corpus (30,000–50,000) for volume training. Provenance manifest required before any data collection begins.
@@ -506,7 +507,7 @@ Do not silently fail. Do not work around a fundamental problem without documenti
 - Phase 0 Tasks: Added ui/ directory initialization with web UI skeleton (chat panel, 1×/4× preview, approve/reject/adjust, project tabs, freeform tab) — must be functional before Phase 5.
 - Phase 0 Completion Gate: Added mode7_freeform.py stub gate criterion.
 - Phase 0 Completion Gate: Added web UI skeleton functional gate criterion.
-- Phase 5 Tasks: Added 5 freeform Mode 7 test generations — validate DNA/style constraints bypassed, outputs isolated to assets/freeform/, continuity manifest not updated.
+- Phase 5 Tasks: Added 5 freeform Mode 7 test generations — validate DNA/style constraints bypassed, outputs isolated to freeform/, continuity manifest not updated.
 - Phase 5 Tasks: Added full web UI approval workflow end-to-end validation — generate, preview, approve, confirm commit; test reject + adjustment cycle; confirm freeform tab independent.
 - Phase 5 Completion Gate: Added Mode 7 freeform isolation gate.
 - Phase 5 Completion Gate: Added web UI workflow validation gate.

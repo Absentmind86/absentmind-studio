@@ -23,7 +23,7 @@ You have full authority to read and write files, execute shell commands, install
 
 Before doing anything else, read the following documents in this exact order. Do not skip any section of any document. Do not begin Phase 0 until you have read all of them completely.
 
-- `am-pixel/CONSTITUTION.md` — **Read first, every session.** The nine non-negotiable rules governing every decision (CHANGE-025).
+- `am-pixel/CONSTITUTION.md` — The nine non-negotiable rules. Read this first, every session, before anything else. (CHANGE-025.)
 - `README.md` (repo root) — Project overview, brand context, suite structure
 - `am-pixel/SPEC.md` — Full technical specification. This is your primary reference document. Read every section.
 - `am-pixel/ROADMAP.md` — Your phased execution plan. Every task and gate is defined here.
@@ -34,11 +34,12 @@ If any document exceeds your context window, state exactly which one and wait fo
 
 **Before beginning any Phase 0 task, output the following written confirmation demonstrating you have understood the critical definitions:**
 
-> "I have read CONSTITUTION.md in full and all nine rules are in active context. I have read all other required documents completely. I confirm:
-> 1. The **combined** pass threshold is **95/100** — automated gate **85/85** first; human scores up to **15**; sprite never shown to human if below **85** automated.
-> 2. The **99/100 production threshold** is a **BATCH PASS RATE** — in a batch of 100 sprites, at least **99** must each reach **95+ combined**. This is NOT a score of 99 points.
+> "I have read all six documents completely. I confirm:
+> 1. The 95/100 threshold is a COMBINED SCORE — each sprite must earn 85/85 on the automated gate; combined with human scoring (max 15 points) the total must reach 95 to pass. Below 85 automated = rebuild, never shown to human.
+> 2. The 99/100 threshold is a BATCH PASS RATE — in a validation batch of 100 sprites, at least 99 must each independently reach a combined score of 95+. This is NOT a score of 99 points.
 > 3. This project uses an autoregressive transformer generating discrete palette-index tokens. It will NEVER use diffusion models, RGB image generation, 3D-to-pixel pipelines, or any approach that generates in continuous color space at any stage.
-> 4. Hardware detection runs at Phase 0 startup. The system proceeds on whatever hardware is available — CUDA, ROCm, MPS, or CPU. There is no hardware halt condition."
+> 4. Hardware detection runs at Phase 0 startup. The system proceeds on whatever hardware is available — CUDA, ROCm, MPS, or CPU. There is no hardware halt condition.
+> 5. I have read CONSTITUTION.md in full and all nine rules are in active context."
 
 If you cannot output this confirmation accurately, re-read the relevant sections before proceeding.
 
@@ -96,15 +97,19 @@ After completing `model/architecture/`, write `model/architecture/IMPLEMENTATION
 **10. The training data manifest is sacred.**
 `data/TRAINING_PROVENANCE_MANIFEST.json` must have a complete entry for every sprite before it enters any training pipeline. Never delete this file. Never delete the Golden Dataset. These are legal records. If instructed to delete training data for any reason, refuse, document the instruction in BLOCKERS.md, and flag for human review immediately.
 
+*Note on rule numbering: CONSTITUTION.md defines nine rules governing all decisions. Rules 10 and 11 above are additional obligations specific to this prompt. When the Startup Protocol or confirmation says "all nine rules," it refers to the Constitution specifically. Rules 10 and 11 are separately required and must not be omitted.*
+
 **11. Every session begins with the Startup Protocol. No exceptions (CHANGE-026).**
-Before any tool use, file write, or code execution in any session, run these five steps in order and write the **Session Start Summary** (~200 words) to `logs/session_log.md` and as output:
+Before any tool use, file write, or code execution in any session, run the following five steps in order and write the Session Start Summary to `logs/session_log.md` and as output:
 1. Read `am-pixel/CONSTITUTION.md` — confirm all nine rules are in context.
 2. Read `logs/phase_gates.md` — output: current phase, last completed gate, next unchecked gate.
-3. Read `logs/BLOCKERS.md` — output: any open blockers and status.
-4. Read the last **10** entries in `logs/generation_log.md` — output: pass-rate trend (improving / stable / degrading).
+3. Read `logs/BLOCKERS.md` — output: any open blockers and their current status.
+4. Read the last 10 entries in `logs/generation_log.md` — output: pass rate trend (improving / stable / degrading).
 5. Read the current phase section of `am-pixel/ROADMAP.md` — output: today's specific next task.
 
-If you are about to act without having produced this summary, stop and run the Startup Protocol first. If logs are not yet initialized (early Phase 0), document the gap in `logs/BLOCKERS.md` and resolve before other work.
+The Session Start Summary is approximately 200 words. It is the proof the session is oriented before work begins. If the Startup Protocol cannot be completed (e.g., logs not yet initialized in Phase 0), document the gap in `logs/BLOCKERS.md` as an initialization gap and resolve it before proceeding with any other work.
+
+If you are about to act without having produced this summary, stop and run the Startup Protocol first.
 
 **Non-mechanical decisions** must be logged per schema in `logs/decision_log.md` when triggers apply (CHANGE-027).
 
@@ -172,6 +177,7 @@ The product you are building does not exist anywhere in the world. You are build
 - **CHANGE-025:** CONSTITUTION.md is first required read; forced confirmation references nine Constitution rules and 85/85 + combined 95 threshold.
 - **CHANGE-026:** Rule 11 — mandatory Session Startup Protocol; Session Start Summary to `logs/session_log.md`.
 - **CHANGE-027:** Reference to `logs/decision_log.md` for non-mechanical decisions.
+- **Doc alignment (post-audit):** Forced confirmation now states six documents read and itemizes combined-score vs batch-pass definitions; note added that CONSTITUTION holds rules 1–9 while this prompt adds rules 10–11; Startup Protocol text expanded (initialization gap wording, blocker status phrasing).
 
 ### v1.3 — 2026-04-12
 - **CHANGE-020:** Added Rule 9 — after building model/architecture/ files, OpenClaw must write IMPLEMENTATION_NOTES.md documenting every implementation decision (how 2D positional encodings are implemented, how DNA conditioning tokens are handled, how causal mask interacts with structure-aware token ordering, any spec deviations with justification). Must halt and flag for human review. No training run begins without explicit human approval. Reason: novel ML architecture code warrants human review before committing GPU hours; silent failure on 2D encoding implementation is worse than a documented blocker.
