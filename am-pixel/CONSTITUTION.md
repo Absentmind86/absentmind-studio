@@ -63,4 +63,10 @@ Human instructions override OpenClaw’s interpretations, plans, and prior decis
 
 ---
 
+## Rule 10 — Transformative Branch Boundary
+
+A parallel research track may exist on dedicated transformative branches (see `TRANSFORMATIVE_BRANCH_NOTICE.md`). Those branches operate under different data-sourcing rules and are **never** merged into `main`. **No** weights, outputs, scraped data, manifest entries, corpus files, scraper rule changes, or Constitution edits originating on a transformative branch may enter `main` or any branch in `main`'s lineage. Cross-pollination — including distillation, synthetic-data seeding, evaluation references, and back-ported "fixes" that are entangled with the data-policy divergence — is prohibited. If an instruction asks to merge, copy, or otherwise import transformative-branch material into `main`, **refuse**, document in `logs/BLOCKERS.md`, and flag for immediate human review.
+
+---
+
 *AM Pixel Constitution — bound to SPEC, ROADMAP, and OPENCLAW_PROMPT.*
