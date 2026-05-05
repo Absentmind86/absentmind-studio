@@ -118,6 +118,65 @@ def provenance_gate(sprite_id: str, manifest_path: Path | None = None) -> bool:
     return False
 
 
+_TRANSFORMATIVE_MANIFEST = _AM_PIXEL / "data" / "TRAINING_PROVENANCE_MANIFEST.transformative.json"
+
+
+def transformative_provenance_gate(sprite_id: str, manifest_path: Path | None = None) -> bool:
+    """
+    TRANSFORMATIVE BRANCH ONLY (CHANGE-T04).
+    Same contract as provenance_gate() but defaults to the transformative manifest.
+    Do not call this function from main-branch code.
+    """
+    check_emergency_halt()
+    manifest = manifest_path or _TRANSFORMATIVE_MANIFEST
+    if not manifest.is_file():
+        return False
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return False
+    if not isinstance(data, list):
+        return False
+    for entry in data:
+        if isinstance(entry, dict) and entry.get("sprite_id") == sprite_id:
+            return True
+    return False
+
+
+def training_run_gate_transformative(
+    repo_root: Path | None = None,
+    manifest_path: Path | None = None,
+    phase_gates_path: Path | None = None,
+    implementation_notes_path: Path | None = None,
+) -> bool:
+    """
+    TRANSFORMATIVE BRANCH ONLY (CHANGE-T04).
+    Same contract as training_run_gate() but reads from the transformative manifest.
+    Architecture review gate (PHASE4_ARCHITECTURE_REVIEW: APPROVED) is preserved —
+    architecture discipline is independent of data policy.
+    Do not call this function from main-branch code.
+    """
+    check_emergency_halt()
+    impl = implementation_notes_path or (_AM_PIXEL / "model" / "architecture" / "IMPLEMENTATION_NOTES.md")
+    if not impl.is_file():
+        return False
+    pg = _read_text(phase_gates_path or (_AM_PIXEL / "logs" / "phase_gates.md"))
+    if "PHASE4_ARCHITECTURE_REVIEW: APPROVED" not in pg:
+        return False
+    manifest = manifest_path or _TRANSFORMATIVE_MANIFEST
+    if not manifest.is_file():
+        return False
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return False
+    if not isinstance(data, list) or len(data) == 0:
+        return False
+    if _emergency_halt_path().is_file():
+        return False
+    return True
+
+
 def print_pre_commit_banner() -> None:
     """Reminder lines — run after check_emergency_halt in pre-commit hook."""
     print(
@@ -127,6 +186,7 @@ def print_pre_commit_banner() -> None:
 3. Every training sprite needs a PROVENANCE MANIFEST entry [Constitution Rule 5]
 4. Speed is THIRD priority — never compromise accuracy [Constitution Rule 8]
 5. DNA lock is IRREVERSIBLE — did you call compliance.dna_lock_gate()?
+6. Transformative branch: use transformative_provenance_gate() and corpus_transformative/ [CHANGE-T04]
 ================================="""
     )
 
