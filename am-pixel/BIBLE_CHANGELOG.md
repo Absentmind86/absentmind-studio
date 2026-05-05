@@ -439,6 +439,21 @@ Status: Merged into Bible v1.5. Document retained as proposal archive.
 
 ---
 
+---
+
+## PROPOSED_CHANGES_004.md (Series T — Transformative Branch — never merged to main)
+
+### v0.1 — Transformative Branch Governance
+- **CHANGE-T01:** `TRANSFORMATIVE_BRANCH_NOTICE.md` (repo root) — hard boundary document: no merge, no weight distribution, no output crossover. Also added as Constitution Rule 10.
+- **CHANGE-T02:** License allowlist suspended on transformative branch for entries to `TRAINING_PROVENANCE_MANIFEST.transformative.json`. Entry-before-write and never-delete rules unchanged. `copyright_filter_passed` field retained as observation. SPEC §3.2 Tier 2 addendum, SPEC §15 transformative addendum, OPENCLAW_PROMPT Training Data addendum, ROADMAP Phase 3 Tier 2 annotation, CONSTITUTION Rule 5 addendum.
+- **CHANGE-T03:** Parallel paths added to FOLDER_STRUCTURE.md: `TRAINING_PROVENANCE_MANIFEST.transformative.json`, `corpus_transformative/train/`, `corpus_transformative/validation/`, `data/scraper/sources_transformative.md`, `data/scraper/scrape_log_transformative.md`, `logs/transformative_log.md`. ROADMAP Phase 0 init task added for transformative paths.
+- **CHANGE-T04:** Branch-aware compliance gates added to `tools/compliance.py`: `transformative_provenance_gate()` and `training_run_gate_transformative()`. Existing canonical gates unchanged. Tests added in `test_compliance.py`. Pre-commit banner updated. Scraper and validator docstrings updated to reference `--transformative` flag contract.
+- **CHANGE-T05:** Explicit table of rules preserved unchanged on this branch — documented in `PROPOSED_CHANGES_004.md` for future-session clarity.
+
+Status: Implemented on transformative branch. This entry and the T-series are transformative-branch-only — they must never appear in main's BIBLE_CHANGELOG.md.
+
+---
+
 ## Document Hygiene Rules (Going Forward)
 
 1. Every change to any Bible document gets an entry in this file first

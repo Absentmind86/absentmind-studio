@@ -61,9 +61,11 @@ am-pixel/
 │
 ├── data/                              ← Training data pipeline
 │   ├── scraper/
-│   │   ├── scraper.py                 ← Source scraping and downloading — writes provenance entry before writing sprite
-│   │   ├── sources.md                 ← Documented data sources with license status
-│   │   └── scrape_log.md              ← Log of all scraping runs
+│   │   ├── scraper.py                 ← Source scraping and downloading — writes provenance entry before writing sprite; --transformative flag routes to transformative manifest and corpus (CHANGE-T04)
+│   │   ├── sources.md                 ← Documented data sources with license status (main / permissive sources)
+│   │   ├── sources_transformative.md  ← TRANSFORMATIVE BRANCH ONLY (CHANGE-T03) — source log for unrestricted scraping; respects scraping blocks
+│   │   ├── scrape_log.md              ← Log of all scraping runs (main)
+│   │   └── scrape_log_transformative.md  ← TRANSFORMATIVE BRANCH ONLY (CHANGE-T03) — run log for transformative scraping
 │   ├── pipeline/
 │   │   ├── extractor.py               ← Sprite extraction from sprite sheets
 │   │   ├── indexer.py                 ← RGB → palette index conversion
@@ -89,6 +91,12 @@ am-pixel/
 │   │   └── labeled/                   ← Bad sprite + corrected version pairs
 │   │       └── .gitkeep
 │   ├── TRAINING_PROVENANCE_MANIFEST.json  ← IMMUTABLE LEGAL LEDGER — initialized as [] in Phase 0, never deleted. Every training sprite logged with source, license, pHash, tier. (CHANGE-023)
+│   ├── TRAINING_PROVENANCE_MANIFEST.transformative.json  ← TRANSFORMATIVE BRANCH ONLY (CHANGE-T03) — parallel ledger; license allowlist suspended; entry-before-write and never-delete rules still apply; do not write to canonical manifest from transformative operations
+│   ├── corpus_transformative/         ← TRANSFORMATIVE BRANCH ONLY (CHANGE-T03) — Tier 2 storage for unrestricted-license corpus; never merged into corpus/
+│   │   ├── train/
+│   │   │   └── .gitkeep
+│   │   └── validation/
+│   │       └── .gitkeep
 │   └── corpus_stats.md                ← Corpus statistics log — reports Tier 1 and Tier 2 separately
 │
 ├── tools/                             ← Evaluation and management tooling
@@ -236,7 +244,8 @@ am-pixel/
 │   ├── errors.log                     ← Runtime errors and stack traces
 │   ├── freeform_log.md                ← Log of all Mode 7 freeform generation outputs (reference only — not project assets)
 │   ├── BLOCKERS.md                    ← Documented blockers awaiting human input
-│   └── phase_gates.md                 ← Record of phase gate completions; must contain `PHASE4_ARCHITECTURE_REVIEW: APPROVED` before training (CHANGE-028)
+│   ├── phase_gates.md                 ← Record of phase gate completions; must contain `PHASE4_ARCHITECTURE_REVIEW: APPROVED` before training (CHANGE-028)
+│   └── transformative_log.md          ← TRANSFORMATIVE BRANCH ONLY (CHANGE-T03) — A/B comparison notes and cross-branch decision log
 │
 ├── tests/                             ← Automated tests for all tooling
 │   ├── test_palette_validator.py

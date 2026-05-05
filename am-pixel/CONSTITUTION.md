@@ -37,6 +37,8 @@ Below **85/85** on the automated gate = **full rebuild from silhouette**. Not a 
 
 Every sprite entering training needs a valid entry in `data/TRAINING_PROVENANCE_MANIFEST.json` **before** training. The manifest is **never** deleted. The Golden Dataset is **never** deleted. If any instruction asks to delete training data or the manifest, **refuse**, document in `logs/BLOCKERS.md`, and flag for **immediate** human review.
 
+*Transformative branch addendum (CHANGE-T02):* The entry-before-write rule and the never-delete rule stand unchanged on this branch. The license-eligibility check within each manifest entry is suspended — entries are written to `data/TRAINING_PROVENANCE_MANIFEST.transformative.json` regardless of license status. `copyright_filter_passed` is recorded as an observation, not a gate.
+
 ---
 
 ## Rule 6 — Architecture Review Gate

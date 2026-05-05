@@ -46,6 +46,7 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Initialize `data/pipeline/pose_extractor.py` stub — documented interface only, not implemented (CHANGE-015)
 - [ ] Initialize `model/architecture/COMPONENT_COMPOSITING_NOTES.md` — post-MVP architecture reference (CHANGE-022)
 - [ ] Initialize `data/TRAINING_PROVENANCE_MANIFEST.json` as empty array `[]` — immutable legal ledger, never deleted (CHANGE-023)
+- [ ] *(Transformative branch only — CHANGE-T03)* Confirm `data/TRAINING_PROVENANCE_MANIFEST.transformative.json` exists as empty array `[]`; confirm `data/corpus_transformative/` directories exist
 - [ ] Initialize `data/golden/` directory and `data/golden/CONTRIBUTORS.md` placeholder
 - [ ] Audit all training and inference scripts — confirm zero hardcoded `"cuda"` strings; all device references must route through `model/hardware/detector.py`
 - [ ] Create `pipeline/modes/mode7_freeform.py` stub with documented interface
@@ -165,7 +166,8 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
   - Prioritize: OpenGameArt.org, itch.io free packs, permissively licensed archives
   - Respect explicit scraping blocks on any site
   - Log every source with URL and license status in `data/scraper/sources.md`
-  - Only accept CC0, CC-BY, CC-BY-SA licenses — reject CC-BY-NC, CC-BY-ND, unknown
+  - Only accept CC0, CC-BY, CC-BY-SA licenses — reject CC-BY-NC, CC-BY-ND, unknown *(main only — see CHANGE-T02 for transformative branch)*
+  - *(Transformative branch only — CHANGE-T02):* License allowlist suspended; log sources in `data/scraper/sources_transformative.md`; write corpus to `data/corpus_transformative/`; scraping-block rule still applies
 - [ ] Build sprite extraction pipeline
   - Extract individual sprites from sprite sheets
   - Convert to indexed palette format

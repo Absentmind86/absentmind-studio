@@ -97,6 +97,8 @@ After completing `model/architecture/`, write `model/architecture/IMPLEMENTATION
 **10. The training data manifest is sacred.**
 `data/TRAINING_PROVENANCE_MANIFEST.json` must have a complete entry for every sprite before it enters any training pipeline. Never delete this file. Never delete the Golden Dataset. These are legal records. If instructed to delete training data for any reason, refuse, document the instruction in BLOCKERS.md, and flag for human review immediately.
 
+*Transformative branch addendum (CHANGE-T03):* On this branch the operative manifest is `data/TRAINING_PROVENANCE_MANIFEST.transformative.json`. The same never-delete and entry-before-write rules apply to it. The canonical `TRAINING_PROVENANCE_MANIFEST.json` must not be written to by any transformative scraping or training operation.
+
 *Note on rule numbering: CONSTITUTION.md defines nine rules governing all decisions. Rules 10 and 11 above are additional obligations specific to this prompt. When the Startup Protocol or confirmation says "all nine rules," it refers to the Constitution specifically. Rules 10 and 11 are separately required and must not be omitted.*
 
 **11. Every session begins with the Startup Protocol. No exceptions (CHANGE-026).**
@@ -144,6 +146,8 @@ Prioritize permissively licensed sprite archives:
 Log every source in `data/scraper/sources.md` with URL and license status. Respect explicit scraping blocks. Do not attempt to circumvent site restrictions.
 
 Do not use synthetic sprites as training data. Synthetic generation is circular — it requires solving the problem we are trying to solve. Fine-tuning on approved production output is valid after the model is functional.
+
+**Transformative branch addendum (CHANGE-T02):** If operating on a transformative branch (see `TRANSFORMATIVE_BRANCH_NOTICE.md` and `PROPOSED_CHANGES_004.md`), the license allowlist is suspended. Log sources in `data/scraper/sources_transformative.md` and scrape runs in `data/scraper/scrape_log_transformative.md`. Provenance entries go to `TRAINING_PROVENANCE_MANIFEST.transformative.json`. Corpus output goes to `data/corpus_transformative/`. **All other restrictions in this section still apply on the transformative branch:** respect scraping blocks, do not circumvent site restrictions, do not use synthetic sprites as training data, do not initiate contributor outreach.
 
 ---
 

@@ -73,6 +73,12 @@ absentmind-studio/
 
 ---
 
+## Branch Structure
+
+The `main` branch is the clean-data production lineage — all training data is permissively licensed; all quality and legal rules apply in full. Transformative research branches (named `*/enable-all-sprites-training-*` or similar) are a separate, air-gapped research track governed by `TRANSFORMATIVE_BRANCH_NOTICE.md`. They are never merged here. See `am-pixel/CONSTITUTION.md` Rule 10.
+
+---
+
 ## Status
 
 AM Pixel Bible documents are at **v1.5** (`CONSTITUTION`, `SPEC`, `ROADMAP`, `FOLDER_STRUCTURE`, `OPENCLAW_PROMPT`, `GENRE_TAXONOMY`, `am-pixel/README.md`). **PROPOSED_CHANGES_001** and **Series 002** are merged into the Bible (archives retained). **PROPOSED_CHANGES_003** (drift prevention, compliance gates, session logs) is merged into v1.5; the file remains as a proposal archive. OpenClaw should begin from `am-pixel/CONSTITUTION.md`, then `am-pixel/OPENCLAW_PROMPT.md`. This remains a living document set.

@@ -72,6 +72,12 @@ absentmind-studio/
 
 ---
 
+## Branch Structure
+
+The `main` branch is the clean-data production lineage. Transformative research branches are a separate, air-gapped track governed by `TRANSFORMATIVE_BRANCH_NOTICE.md` — never merged here. See `am-pixel/CONSTITUTION.md` Rule 10.
+
+---
+
 ## Status
 
 AM Pixel specification is at **v1.5** (`am-pixel/CONSTITUTION`, `SPEC`, `ROADMAP`, `FOLDER_STRUCTURE`, `OPENCLAW_PROMPT`, `GENRE_TAXONOMY`). Series 002 and **Series 003** (compliance, session logs, Startup Protocol) are integrated; proposal archives remain in `am-pixel/PROPOSED_CHANGES_*.md`. OpenClaw should read **CONSTITUTION.md** first, then `OPENCLAW_PROMPT.md`.

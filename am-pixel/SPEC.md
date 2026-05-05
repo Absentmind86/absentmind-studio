@@ -119,6 +119,8 @@ A manually curated set of 3,000–5,000 sprites, individually verified to be cor
 **Tier 2 — Broad Corpus (volume and variety):**
 Algorithmically scraped and filtered sprites, target 30,000–50,000. Quality is lower and inconsistent. Used for Stage 1 foundation training to give the model exposure to variety. Stored in `data/corpus/train/` and `data/corpus/validation/`.
 
+*Transformative branch addendum (CHANGE-T02):* On this branch, Tier 2 corpus lives at `data/corpus_transformative/train/` and `data/corpus_transformative/validation/`. The license allowlist is suspended — sprites of any provenance may be ingested. Tier 1 Golden Dataset rules are **not** relaxed (commissioned/CC0 only) so the A/B quality comparison retains a clean-data fine-tuning signal.
+
 Training strategy: pre-train on Tier 2 (broad exposure), fine-tune on Tier 1 (quality signal). Stage 1 = Tier 2 corpus. Stage 2 = Tier 1 corpus.
 
 **Paired-view training sequences (CHANGE-017):**
@@ -978,6 +980,8 @@ The web UI skeleton (working chat panel + image preview + approve/reject control
 **Acceptable licenses:** CC0, CC-BY (any version), CC-BY-SA (note share-alike obligations), commissioned work-for-hire (copyright explicitly transferred), procedurally generated (post-MVP fine-tuning only). Not acceptable: CC-BY-NC (AM Pixel has commercial tiers), CC-BY-ND (training creates derivatives), unknown license.
 
 A sprite without a manifest entry does not get trained on. No exceptions.
+
+**Transformative branch addendum (CHANGE-T02):** On the transformative branch this manifest is an audit ledger rather than a legal shield. The license allowlist above is suspended. Provenance is still recorded in `data/TRAINING_PROVENANCE_MANIFEST.transformative.json` with `copyright_filter_passed` populated as an honest observation. The never-delete and entry-before-write rules stand. This branch never ships weights or distributes outputs — see `TRANSFORMATIVE_BRANCH_NOTICE.md` and `PROPOSED_CHANGES_004.md`.
 
 ---
 
