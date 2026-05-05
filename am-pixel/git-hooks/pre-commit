@@ -1,7 +1,37 @@
 #!/bin/sh
 # AM Pixel pre-commit — copy to .git/hooks/pre-commit (repo root) and chmod +x
-# CHANGE-028 Mechanism 5
+# CHANGE-028 Mechanism 5 | Constitution Rule 11 (CHANGE-032 / CHANGE-T06)
+
 REPO_ROOT=$(git rev-parse --show-toplevel)
 export PYTHONPATH="$REPO_ROOT/am-pixel"
+
+# ── Constitution Rule 11 — Protected file guard ──────────────────────────────
+# OpenClaw may never commit modifications to these files without explicit human
+# co-author approval. --no-verify to bypass is prohibited by Rule 11 itself.
+PROTECTED="am-pixel/CONSTITUTION.md am-pixel/tools/compliance.py am-pixel/git-hooks/pre-commit TRANSFORMATIVE_BRANCH_NOTICE.md"
+STAGED_PROTECTED=""
+for f in $PROTECTED; do
+    if git diff --cached --name-only | grep -qF "$f"; then
+        STAGED_PROTECTED="$STAGED_PROTECTED
+  $f"
+    fi
+done
+if [ -n "$STAGED_PROTECTED" ]; then
+    echo "===== CONSTITUTION RULE 11 — PROTECTED FILE EDIT BLOCKED =====" >&2
+    echo "The following protected files are staged for commit:" >&2
+    echo "$STAGED_PROTECTED" >&2
+    echo "" >&2
+    echo "OpenClaw may NOT commit modifications to these files without" >&2
+    echo "explicit human co-author approval." >&2
+    echo "" >&2
+    echo "Required action: document the needed change in logs/BLOCKERS.md" >&2
+    echo "and flag for immediate human review. The human will make the edit" >&2
+    echo "or authorize it. Using --no-verify to bypass this block is itself" >&2
+    echo "a Rule 11 violation and must be logged as a BLOCKER." >&2
+    echo "================================================================" >&2
+    exit 1
+fi
+# ─────────────────────────────────────────────────────────────────────────────
+
 python "$REPO_ROOT/am-pixel/tools/compliance.py"
 exit $?

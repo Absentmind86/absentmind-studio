@@ -8,6 +8,7 @@ Emergency halt file: `<repo_root>/EMERGENCY_HALT` (human-created; never delete a
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -116,6 +117,51 @@ def provenance_gate(sprite_id: str, manifest_path: Path | None = None) -> bool:
         if isinstance(entry, dict) and entry.get("sprite_id") == sprite_id:
             return True
     return False
+
+
+# Constitution Rule 11 — files OpenClaw may never commit to without human approval.
+PROTECTED_FILES = [
+    "am-pixel/CONSTITUTION.md",
+    "am-pixel/tools/compliance.py",
+    "am-pixel/git-hooks/pre-commit",
+    "TRANSFORMATIVE_BRANCH_NOTICE.md",
+]
+
+
+def constitution_integrity_gate(repo_root: Path | None = None) -> bool:
+    """
+    Constitution Rule 11 — call as the first action of every Startup Protocol.
+    Checks whether any protected file has uncommitted modifications since HEAD.
+    Returns False and prints a halt message if modifications are detected.
+    Fails open (returns True) if git is unavailable — pre-commit hook is the
+    primary enforcement; this is the session-start early-warning layer.
+    """
+    check_emergency_halt()
+    root = repo_root or REPO_ROOT
+    try:
+        result = subprocess.run(
+            ["git", "diff", "HEAD", "--name-only", "--"] + PROTECTED_FILES,
+            cwd=root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return True  # git unavailable — fail open
+        modified = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        if modified:
+            print("===== CONSTITUTION RULE 11 — PROTECTED FILE MODIFIED =====", file=sys.stderr)
+            print("Uncommitted modifications detected in protected files:", file=sys.stderr)
+            for f in modified:
+                print(f"  {f}", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("HALT ALL WORK. Document in logs/BLOCKERS.md.", file=sys.stderr)
+            print("Flag for immediate human review before proceeding.", file=sys.stderr)
+            print("==========================================================", file=sys.stderr)
+            return False
+        return True
+    except Exception:
+        return True  # fail open
 
 
 _TRANSFORMATIVE_MANIFEST = _AM_PIXEL / "data" / "TRAINING_PROVENANCE_MANIFEST.transformative.json"

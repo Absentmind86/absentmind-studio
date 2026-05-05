@@ -449,6 +449,7 @@ Status: Merged into Bible v1.5. Document retained as proposal archive.
 - **CHANGE-T03:** Parallel paths added to FOLDER_STRUCTURE.md: `TRAINING_PROVENANCE_MANIFEST.transformative.json`, `corpus_transformative/train/`, `corpus_transformative/validation/`, `data/scraper/sources_transformative.md`, `data/scraper/scrape_log_transformative.md`, `logs/transformative_log.md`. ROADMAP Phase 0 init task added for transformative paths.
 - **CHANGE-T04:** Branch-aware compliance gates added to `tools/compliance.py`: `transformative_provenance_gate()` and `training_run_gate_transformative()`. Existing canonical gates unchanged. Tests added in `test_compliance.py`. Pre-commit banner updated. Scraper and validator docstrings updated to reference `--transformative` flag contract.
 - **CHANGE-T05:** Explicit table of rules preserved unchanged on this branch — documented in `PROPOSED_CHANGES_004.md` for future-session clarity.
+- **CHANGE-T06:** Constitution Rule 11 — Protected Files. Added to CONSTITUTION.md, compliance.py (`constitution_integrity_gate()`), git-hooks/pre-commit (shell-level block), OPENCLAW_PROMPT.md Startup Protocol (step 0), and test_compliance.py (4 new tests). Pre-commit hook now blocks commits staging any protected file; gate runs at session start before any other action. Applies to both branches (on main this is CHANGE-032).
 
 Status: Implemented on transformative branch. This entry and the T-series are transformative-branch-only — they must never appear in main's BIBLE_CHANGELOG.md.
 

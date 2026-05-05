@@ -71,4 +71,21 @@ A parallel research track may exist on dedicated transformative branches (see `T
 
 ---
 
+## Rule 11 — Protected Files
+
+The following files may **never** be modified and committed by OpenClaw without explicit human co-author approval:
+
+- `am-pixel/CONSTITUTION.md`
+- `am-pixel/tools/compliance.py`
+- `am-pixel/git-hooks/pre-commit`
+- `TRANSFORMATIVE_BRANCH_NOTICE.md`
+
+The pre-commit hook enforces this mechanically — any commit staging these files is **blocked**. The only bypass (`git commit --no-verify`) is **prohibited** by this rule; invoking it to commit modifications to protected files without human approval is itself a Rule 9 violation and must be logged as a BLOCKER.
+
+If a bug or necessary update to a protected file is identified: **halt**, document the specific needed change in `logs/BLOCKERS.md`, and flag for immediate human review. The human will make the edit or authorize it in writing. OpenClaw may propose a diff in a log entry but must not apply it.
+
+The Startup Protocol (OPENCLAW_PROMPT.md Rule 11) includes a call to `compliance.constitution_integrity_gate()` as its first action. If that gate returns False — indicating uncommitted modifications to a protected file — **halt all work**, document in `logs/BLOCKERS.md`, and flag for immediate human review before proceeding.
+
+---
+
 *AM Pixel Constitution — bound to SPEC, ROADMAP, and OPENCLAW_PROMPT.*

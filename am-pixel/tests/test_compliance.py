@@ -114,6 +114,54 @@ class ProvenanceGateTests(unittest.TestCase):
                 self.assertFalse(compliance.provenance_gate("missing", manifest_path=mpath))
 
 
+class ConstitutionIntegrityGateTests(unittest.TestCase):
+    """Constitution Rule 11 — protected file modification detection."""
+
+    def test_passes_when_no_git_available(self) -> None:
+        """Gate fails open when git subprocess is unavailable (e.g. test environment)."""
+        from tools import compliance
+        import unittest.mock as mock
+
+        with mock.patch("subprocess.run", side_effect=FileNotFoundError("git not found")):
+            with tempfile.TemporaryDirectory() as tmp:
+                with mock.patch.object(compliance, "REPO_ROOT", Path(tmp)):
+                    # Should return True (fail open) rather than crashing
+                    self.assertTrue(compliance.constitution_integrity_gate(repo_root=Path(tmp)))
+
+    def test_passes_when_git_returns_no_modified_files(self) -> None:
+        from tools import compliance
+        import unittest.mock as mock
+
+        mock_result = mock.MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = ""  # no modified protected files
+        with mock.patch("subprocess.run", return_value=mock_result):
+            with tempfile.TemporaryDirectory() as tmp:
+                self.assertTrue(compliance.constitution_integrity_gate(repo_root=Path(tmp)))
+
+    def test_fails_when_protected_file_modified(self) -> None:
+        from tools import compliance
+        import unittest.mock as mock
+
+        mock_result = mock.MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "am-pixel/CONSTITUTION.md\n"
+        with mock.patch("subprocess.run", return_value=mock_result):
+            with tempfile.TemporaryDirectory() as tmp:
+                self.assertFalse(compliance.constitution_integrity_gate(repo_root=Path(tmp)))
+
+    def test_fails_open_on_nonzero_git_returncode(self) -> None:
+        from tools import compliance
+        import unittest.mock as mock
+
+        mock_result = mock.MagicMock()
+        mock_result.returncode = 128  # git error (e.g. not a git repo)
+        mock_result.stdout = ""
+        with mock.patch("subprocess.run", return_value=mock_result):
+            with tempfile.TemporaryDirectory() as tmp:
+                self.assertTrue(compliance.constitution_integrity_gate(repo_root=Path(tmp)))
+
+
 class TransformativeProvenanceGateTests(unittest.TestCase):
     """CHANGE-T04 — transformative branch gate; canonical gate must be unaffected."""
 

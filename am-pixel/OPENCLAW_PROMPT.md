@@ -99,11 +99,12 @@ After completing `model/architecture/`, write `model/architecture/IMPLEMENTATION
 
 *Transformative branch addendum (CHANGE-T03):* On this branch the operative manifest is `data/TRAINING_PROVENANCE_MANIFEST.transformative.json`. The same never-delete and entry-before-write rules apply to it. The canonical `TRAINING_PROVENANCE_MANIFEST.json` must not be written to by any transformative scraping or training operation.
 
-*Note on rule numbering: CONSTITUTION.md defines nine rules governing all decisions. Rules 10 and 11 above are additional obligations specific to this prompt. When the Startup Protocol or confirmation says "all nine rules," it refers to the Constitution specifically. Rules 10 and 11 are separately required and must not be omitted.*
+*Note on rule numbering: CONSTITUTION.md now defines eleven rules. Rules 10–11 in this prompt mirror Constitution Rules 10–11 and are not additional — they are the same rules restated here for visibility. When the confirmation says "all eleven rules," it refers to all eleven Constitution rules.*
 
 **11. Every session begins with the Startup Protocol. No exceptions (CHANGE-026).**
-Before any tool use, file write, or code execution in any session, run the following five steps in order and write the Session Start Summary to `logs/session_log.md` and as output:
-1. Read `am-pixel/CONSTITUTION.md` — confirm all nine rules are in context.
+Before any tool use, file write, or code execution in any session, run the following steps in order and write the Session Start Summary to `logs/session_log.md` and as output:
+0. Run `compliance.constitution_integrity_gate()` — **before reading anything else**. If it returns False, halt all work, document in `logs/BLOCKERS.md`, and flag for immediate human review. Do not proceed until a human clears the blocker. (Constitution Rule 11 / CHANGE-032)
+1. Read `am-pixel/CONSTITUTION.md` — confirm all eleven rules are in active context.
 2. Read `logs/phase_gates.md` — output: current phase, last completed gate, next unchecked gate.
 3. Read `logs/BLOCKERS.md` — output: any open blockers and their current status.
 4. Read the last 10 entries in `logs/generation_log.md` — output: pass rate trend (improving / stable / degrading).
