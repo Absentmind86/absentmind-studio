@@ -2,3 +2,5 @@
 # Populated by model/hardware/detector.py during Phase 0 initialization.
 # Format: Backend | GPU Model | VRAM | Baseline inference speed (tokens/sec on 16x16 sprite)
 # Example: Backend: CUDA | GPU: RTX 4090 | VRAM: 24GB | Baseline inference: 312 tokens/sec
+2026-07-01T21:29:18 backend=cpu device=cpu name='x86_64' vram_gb=None baseline_tok_per_sec=40849.92
+2026-07-01T21:29:43 backend=cpu device=cpu name='x86_64' vram_gb=None baseline_tok_per_sec=197.28
