@@ -32,3 +32,4 @@
 - model: small (889,860 params), device cpu
 - steps 700, batch 8, lr 0.0003
 - step 50: train_loss 2.6650 | val_loss 2.4965 | val_token_acc 55.1% | 93s
+- step 100: train_loss 1.2189 | val_loss 0.7593 | val_token_acc 82.2% | 191s
