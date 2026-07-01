@@ -1,2 +1,49 @@
 <!DOCTYPE html>
-<html><head><title>AM Pixel</title></head><body>Phase 0 shell</body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AM Pixel</title>
+<link rel="stylesheet" href="/static/main.css">
+</head>
+<body>
+<header>
+  <h1>AM&nbsp;Pixel</h1>
+  <nav id="tabs">
+    <button class="tab active" data-tab="chat">Generate</button>
+    <button class="tab" data-tab="projects">Project</button>
+    <button class="tab" data-tab="freeform">Freeform</button>
+    <button class="tab" data-tab="continuity">Continuity</button>
+  </nav>
+  <div id="statusbar">loading status…</div>
+</header>
+
+<main>
+  <section id="panel-chat" class="panel active">
+    <div id="chatlog"></div>
+    <div id="preview">
+      <div class="zoomblock"><h3>1×</h3><img id="img1x" alt="1x preview"></div>
+      <div class="zoomblock"><h3>4×</h3><img id="img4x" alt="4x preview"></div>
+      <div id="scorecard"></div>
+    </div>
+    <form id="chatform">
+      <input id="prompt" placeholder="Describe the sprite… (proof-of-life build: describe = pick size/palette below)" autocomplete="off">
+      <label>W <input id="width" type="number" value="16" min="8" max="64"></label>
+      <label>H <input id="height" type="number" value="24" min="8" max="64"></label>
+      <label>seed <input id="seed" type="number" placeholder="rand"></label>
+      <button type="submit" id="genbtn">Generate</button>
+    </form>
+    <div id="controls">
+      <button id="approve" disabled>Approve</button>
+      <button id="reject" disabled>Reject</button>
+      <button id="adjust" disabled>Adjust…</button>
+    </div>
+  </section>
+
+  <section id="panel-projects" class="panel" data-src="/fragment/project_tabs"></section>
+  <section id="panel-freeform" class="panel" data-src="/fragment/freeform"></section>
+  <section id="panel-continuity" class="panel"><pre id="continuity-md">loading…</pre></section>
+</main>
+
+<script src="/static/main.js"></script>
+</body>
+</html>

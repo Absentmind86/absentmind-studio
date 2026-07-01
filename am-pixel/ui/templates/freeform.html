@@ -1,2 +1,18 @@
-<!DOCTYPE html>
-<html><body>Freeform tab placeholder</body></html>
+<div class="freeform">
+  <h2>Freeform (Mode 7)</h2>
+  <p class="muted">No DNA, no style bible, no project state. Approved outputs land in
+  <code>freeform/</code> only (SPEC §5.7).</p>
+  <form id="freeform-form">
+    <input id="ff-prompt" placeholder="Describe anything…" autocomplete="off">
+    <label>W <input id="ff-width" type="number" value="32" min="8" max="64"></label>
+    <label>H <input id="ff-height" type="number" value="32" min="8" max="64"></label>
+    <label>name <input id="ff-name" placeholder="my_sprite"></label>
+    <button type="submit">Generate</button>
+  </form>
+  <div class="zoomrow">
+    <div class="zoomblock"><h3>1×</h3><img id="ff-img1x" alt=""></div>
+    <div class="zoomblock"><h3>4×</h3><img id="ff-img4x" alt=""></div>
+  </div>
+  <button id="ff-approve" disabled>Approve → freeform/</button>
+  <div id="ff-status" class="muted"></div>
+</div>
