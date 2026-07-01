@@ -1,0 +1,6 @@
+{
+  "failure_mode": "anti_aliasing",
+  "bad": "anti_aliasing_0008_bad.png",
+  "corrected": "anti_aliasing_0008_corrected.png",
+  "rubric_category": "technical_compliance"
+}

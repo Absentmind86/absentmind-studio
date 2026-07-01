@@ -92,7 +92,7 @@ am-pixel/
 │   │   └── labeled/                   ← Bad sprite + corrected version pairs
 │   │       └── .gitkeep
 │   ├── validation_corpus/             ← Tier 0 synthetic smoke-test corpus (CHANGE-037) — never production training data
-│   │   └── .gitkeep
+│   │   └── .gitkeep                   ← built by data/pipeline/validation_corpus.py (deterministic, provenance-first)
 │   ├── TRAINING_PROVENANCE_MANIFEST.json  ← IMMUTABLE LEGAL LEDGER — initialized as [] in Phase 0, never deleted. Every training sprite logged with source, license, pHash, tier. (CHANGE-023)
 │   └── corpus_stats.md                ← Corpus statistics log — reports Tier 1 and Tier 2 separately
 │

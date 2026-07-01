@@ -26,3 +26,9 @@
 
 | Date | Phase | Steps | Train Loss | Val Loss | Notes |
 |------|-------|-------|------------|----------|-------|
+
+## Training run 2026-07-01T21:39:07 — VALIDATION RUN (tier 0)
+- corpus: data/validation_corpus/indexed (271 train / 29 val)
+- model: small (889,860 params), device cpu
+- steps 700, batch 8, lr 0.0003
+- step 50: train_loss 2.6650 | val_loss 2.4965 | val_token_acc 55.1% | 93s

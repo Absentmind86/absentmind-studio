@@ -1,0 +1,6 @@
+{
+  "failure_mode": "black_outline",
+  "bad": "black_outline_0009_bad.png",
+  "corrected": "black_outline_0009_corrected.png",
+  "rubric_category": "construction_quality"
+}

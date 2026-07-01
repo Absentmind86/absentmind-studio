@@ -1,0 +1,6 @@
+{
+  "failure_mode": "banding",
+  "bad": "banding_0008_bad.png",
+  "corrected": "banding_0008_corrected.png",
+  "rubric_category": "construction_quality"
+}

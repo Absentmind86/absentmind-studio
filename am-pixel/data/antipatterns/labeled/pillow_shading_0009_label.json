@@ -1,0 +1,6 @@
+{
+  "failure_mode": "pillow_shading",
+  "bad": "pillow_shading_0009_bad.png",
+  "corrected": "pillow_shading_0009_corrected.png",
+  "rubric_category": "construction_quality"
+}
