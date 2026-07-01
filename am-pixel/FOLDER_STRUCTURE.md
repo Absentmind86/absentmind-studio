@@ -1,5 +1,5 @@
 # AM Pixel — Project Folder Structure
-**Absentmind Studio | Version 1.5**
+**Absentmind Studio | Version 1.6**
 
 OpenClaw initializes this exact structure in Phase 0. Every directory and file listed here must exist before Phase 1 begins. Placeholder files use `.gitkeep`.
 
@@ -16,8 +16,10 @@ am-pixel/
 ├── FOLDER_STRUCTURE.md                ← This document
 ├── OPENCLAW_PROMPT.md                 ← Prompt for OpenClaw initialization
 ├── BIBLE_CHANGELOG.md                 ← Complete authoritative change history for all Bible documents; log changes here before applying to any document
+├── PROPOSED_CHANGES_001.md            ← Series 001 archive — fully implemented in Bible v1.2; retained for rationale (added to listing v1.6)
 ├── PROPOSED_CHANGES_002.md            ← Series 002 archive — substantive items (CHANGE-010–023) merged into Bible; document retained for rationale and review history
 ├── PROPOSED_CHANGES_003.md            ← Series 003 — drift prevention & compliance; merged into Bible when accepted
+├── PROPOSED_CHANGES_004.md            ← Series 004 archive — post-review alignment (CHANGE-032–038); merged into Bible v1.6
 │
 ├── knowledge/                         ← Boot Training knowledge base
 │   ├── HARDWARE_CONSTRAINTS.md        ← SNES + 5 other platforms
@@ -74,6 +76,7 @@ am-pixel/
 │   │   ├── pose_extractor.py          ← STUB — documented interface only. Extracts simplified 2D skeleton key points from sprites for animation temporal conditioning upgrade path (CHANGE-015)
 │   │   ├── validator.py               ← SNES palette compliance validation — checks for provenance entry before passing sprite
 │   │   ├── metadata.py                ← Metadata tagging for training pairs
+│   │   ├── provenance.py              ← Manifest write-safety: JSONL journal + atomic array rewrite (CHANGE-034)
 │   │   └── splitter.py                ← Train/validation split
 │   ├── golden/                        ← Tier 1 — manually curated Golden Dataset (3,000–5,000 sprites, human-verified)
 │   │   ├── CONTRIBUTORS.md            ← Human record of Golden Dataset contributors: handle, anonymity preference, accepted sprites, tier
@@ -88,6 +91,8 @@ am-pixel/
 │   │   ├── generator.py               ← Programmatic bad sprite generator
 │   │   └── labeled/                   ← Bad sprite + corrected version pairs
 │   │       └── .gitkeep
+│   ├── validation_corpus/             ← Tier 0 synthetic smoke-test corpus (CHANGE-037) — never production training data
+│   │   └── .gitkeep
 │   ├── TRAINING_PROVENANCE_MANIFEST.json  ← IMMUTABLE LEGAL LEDGER — initialized as [] in Phase 0, never deleted. Every training sprite logged with source, license, pHash, tier. (CHANGE-023)
 │   └── corpus_stats.md                ← Corpus statistics log — reports Tier 1 and Tier 2 separately
 │
@@ -291,11 +296,14 @@ BLOCKER: [short description] — awaiting human input
 
 ---
 
-*AM Pixel Folder Structure v1.5 | Absentmind Studio*
+*AM Pixel Folder Structure v1.6 | Absentmind Studio*
 
 ---
 
 ## Changelog
+
+### v1.6 — 2026-07-01
+- **Series 004:** `PROPOSED_CHANGES_001.md` added to top-level listing (was in repo, unlisted). `PROPOSED_CHANGES_004.md` added. `data/pipeline/provenance.py` added (CHANGE-034). `data/validation_corpus/` added (CHANGE-037).
 
 ### v1.5 — 2026-04-21
 - **CHANGE-025:** `CONSTITUTION.md` — nine rules; read first every session.

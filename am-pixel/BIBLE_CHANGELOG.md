@@ -1,5 +1,5 @@
 # AM Pixel Bible — Document Changelog
-**Absentmind Studio | Version 1.5**
+**Absentmind Studio | Version 1.6**
 
 This document is the authoritative change history for every document in the AM Pixel Bible. It was initially compiled retroactively from project conversation history. All future changes must be logged here in real time before being applied to any document.
 
@@ -16,8 +16,56 @@ Each section covers one document. Each version entry lists what changed and why.
 - v1.3 — Third major revision (PROPOSED_CHANGES_002 implementation)
 - v1.4 — Fourth alignment revision: canonical tree after `bible-v1.3-apr13` distinguished per Document Hygiene Rules (all documents incremented together; no additional CHANGE series delta)
 - v1.5 — Fifth revision (**PROPOSED_CHANGES_003**): CONSTITUTION.md; compliance gates + emergency halt; session_log / decision_log; Startup Protocol (Rule 11); Hardware Reality table; DNA rollback procedure; Phase 8 failure-cluster protocol; mode module docstrings; rubric evidence requirement
+- v1.6 — Sixth revision (**PROPOSED_CHANGES_004**, post-comprehensive-review): palette grounding (CHANGE-032); Rubric B/C tier split (CHANGE-033); provenance write-safety (CHANGE-034); rebuild-semantics clarification (CHANGE-035); hardware tier correction OpenCL→XPU (CHANGE-036); Tier 0 validation corpus (CHANGE-037); CC-BY-SA licensing hold (CHANGE-038); cross-reference fixes; stale ROOT_README.md removed
 
 **Bible-wide version rule:** All documents must share the same version number at the end of any update session. A document that has no content changes in a given session still increments its version to maintain alignment. The exception is ROOT_README.md which tracks separately as the umbrella document.
+
+---
+
+## Bible v1.6 — Post-Review Alignment & Implementation Session (2026-07-01)
+
+Session context: comprehensive external review (Fable 5) identified internal contradictions, one architecture-level specification gap, and code defects in the Phase 0 scaffold. Human granted full written authority for this session, including explicit override of hard stops where procurement is environmentally blocked (documented in `logs/decision_log.md` and `logs/BLOCKERS.md`). All changes below logged here before application, per Document Hygiene Rules. Proposal rationale: `PROPOSED_CHANGES_004.md`.
+
+**SPEC.md → v1.6**
+- **CHANGE-032:** §3.1/§3.2 — Palette grounding specified. Canonical ramp-ordered palette indexing at ingestion + palette color tokens (15-bit RGB channel embeddings) in the conditioning prefix. Closes the "index N has no color semantics across corpus" gap.
+- **CHANGE-033:** §8.3 — Rubrics B and C given the same automated-85/human-15 tier split as Rubric A (Rubric B human: Atmospheric Consistency 15; Rubric C human: Emotional Tone 10 + Atmospheric Cohesion 5 of 20). Constitution Rule 1 is now applicable to all three rubrics.
+- **CHANGE-034:** §15 — Provenance manifest write-safety: all writes route through `data/pipeline/provenance.py` (atomic replace + append-only JSONL journal alongside canonical JSON array).
+- **CHANGE-035:** §8.2 — Two distinct failure paths defined: automated <85/85 = full rebuild from silhouette (never shown to human); automated 85/85 but combined <95 = human-gate rejection, regenerated with the human's noted reason via the standard adjustment loop (not a from-silhouette rebuild unless the human requests one).
+- **CHANGE-036:** §14 — Detection tier 4 "Other GPU → OpenCL via PyTorch extensions" corrected to "Intel GPU → XPU"; PyTorch has no supported OpenCL backend.
+- **CHANGE-037:** §15 — Tier 0 validation corpus defined: synthetic, procedurally generated, used exclusively for pipeline/model smoke tests; recorded in the provenance manifest with `"tier": 0`, `"license": "synthetic-validation"`; never used for production training; excluded from all corpus statistics and pass-rate metrics.
+- **CHANGE-038:** §15 — CC-BY-SA moved from acceptable to on-hold-pending-legal-review: by the document's own reasoning (training creates derivatives — the basis for rejecting CC-BY-ND), share-alike obligations may attach to model weights/outputs, which conflicts with §12.3 commercial tiers.
+- Cross-reference fix: §5.2 example path `dna/characters/sam_vendor.json` → `dna/characters/sam_vendor_v1.json` (CHANGE-029 versioned filename convention; this reference was missed in v1.5).
+
+**README.md (am-pixel hub) → v1.6**
+- Quality Standard section aligned to Constitution Rule 1 / CHANGE-035: states the 85/85 automated gate, the combined 95 threshold, and the two distinct failure paths. Previous wording ("below 95 means rebuild, not patch") contradicted Constitution Rule 4.
+
+**ROADMAP.md → v1.6**
+- Phase 0 web-UI task wording aligned with the Phase 0 completion gate (skeleton functional at Phase 0; full approval-workflow validation remains a Phase 5 gate). Previous text said "before Phase 5" while the Phase 0 gate required it immediately.
+- Phase 0 detection hierarchy line: OpenCL → XPU (CHANGE-036).
+
+**OPENCLAW_PROMPT.md → v1.6**
+- Hardware context tier 4: OpenCL → XPU (CHANGE-036).
+
+**GENRE_TAXONOMY.md → v1.6**
+- Advancement rule qualifier "without requiring a rebuild" aligned with Phase 8 semantics: the validation batch is generated fresh; rebuilds that occurred during production do not disqualify, but no sprite in the batch itself may be a rebuilt retry.
+
+**FOLDER_STRUCTURE.md → v1.6**
+- `PROPOSED_CHANGES_001.md` added to top-level listing (present in repo, previously unlisted).
+- `data/pipeline/provenance.py` added (CHANGE-034). `data/validation_corpus/` added (CHANGE-037).
+
+**Repo root**
+- `ROOT_README.md` deleted — stale near-duplicate of `README.md` (changelog frozen at v1.2, structure table missing CONSTITUTION). Two umbrella documents is precisely the drift the Document Hygiene Rules exist to prevent. `README.md` remains the sole umbrella document.
+
+**PROPOSED_CHANGES_001.md**
+- Header updated from "Working Document | Version 0.1 … staging area" to Archive status, matching Series 002/003 headers. Contents unchanged.
+
+**Code (Phase 0 scaffold) — defects fixed in the same session**
+- `tools/dna_lock_verifier.py`: import path bug — `import dna_diff` could never resolve (module lives in `tools/`), so post-lock verification silently passed forever. Fixed to package-relative import.
+- `tools/compliance.py`: dead `repo_root` parameter now honored by the emergency-halt check; redundant duplicate halt check removed; SystemExit behavior documented and a non-exiting `is_halted()` helper added for server contexts.
+- `tools/rubric_scorer.py`: `evidence_complete` no longer conflates "score below evidence threshold" with "evidence missing".
+- `.gitignore`: log-tracking negations replaced with directory-scoped rules so `am-pixel/logs/` and `model/logs/` contents are never silently ignored.
+- `requirements.txt`: pytest added (test files are pytest-style); Pillow/numpy confirmed.
+- `git-hooks/pre-commit`: executable bit set in git index.
 
 ---
 

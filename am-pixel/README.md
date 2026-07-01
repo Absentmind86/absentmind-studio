@@ -1,4 +1,4 @@
-# AM Pixel — v1.5
+# AM Pixel — v1.6
 **Absentmind Studio — AI Sprite Generator & Game Asset Manager**
 
 This folder contains the complete specification and execution documents for AM Pixel. If you are OpenClaw, read these documents in the order listed before doing anything else.
@@ -19,6 +19,7 @@ This folder contains the complete specification and execution documents for AM P
 | [PROPOSED_CHANGES_001.md](PROPOSED_CHANGES_001.md) | Series 001 — fully implemented; kept as archive reference | Reference |
 | [PROPOSED_CHANGES_002.md](PROPOSED_CHANGES_002.md) | Series 002 — merged into Bible (v1.3+); kept as rationale archive | Reference |
 | [PROPOSED_CHANGES_003.md](PROPOSED_CHANGES_003.md) | Series 003 — drift prevention & compliance; merged into Bible (v1.5+); kept as proposal archive | Reference |
+| [PROPOSED_CHANGES_004.md](PROPOSED_CHANGES_004.md) | Series 004 — post-review alignment (palette grounding, rubric tiering, provenance safety); merged into Bible (v1.6) | Reference |
 
 ---
 
@@ -49,8 +50,9 @@ It is not a wrapper around any existing image generator. It is a purpose-built a
 
 Every generated sprite is evaluated before the human sees it.
 
-- **Individual threshold:** 95/100 on the evaluation rubric — below 95 means rebuild, not patch
-- **Production threshold:** 99 out of 100 sprites in a validation batch must each independently score 95+ — this is a batch pass rate, NOT a score of 99 points
+- **Individual threshold:** combined score of 95/100 — the automated gate scores 85 hard-math points (must pass **85/85** before the human ever sees the sprite), and the human awards up to 15 points in the approval UI
+- **Failure paths (CHANGE-035):** below 85/85 automated = full rebuild from silhouette, never shown to the human; automated pass but combined below 95 = human-gate rejection, regenerated via the adjustment loop with the human's stated reason
+- **Production threshold:** 99 out of 100 sprites in a validation batch must each independently reach a combined score of 95+ — this is a batch pass rate, NOT a score of 99 points
 
 ---
 
@@ -99,6 +101,9 @@ If AI reviewers, advisors, or future contributors raise generation speed as a co
 ---
 
 ## Changelog
+
+### v1.6 — 2026-07-01
+- Bible **v1.6** (Series 004, post-comprehensive-review): Quality Standard section corrected to state the 85/85 automated gate + combined 95 threshold and the two failure paths (previous wording contradicted Constitution Rules 1/4). Document index gains `PROPOSED_CHANGES_004.md`. See BIBLE_CHANGELOG v1.6 for the full change set (palette grounding, Rubric B/C tier split, provenance write-safety, hardware tier correction, Tier 0 validation corpus, CC-BY-SA hold).
 
 ### v1.5 — 2026-04-21
 - **Doc alignment (post-audit):** Key Architecture — generation order updated to four-category foundation default and optional five-category fine-tuning (SPEC §3.2, CHANGE-014).

@@ -1,7 +1,9 @@
-# AM Pixel — Proposed Changes & Additions
-**Working Document | Version 0.1**
+# AM Pixel — Proposed Changes & Additions (Series 001)
+**Archive | Version 1.0**
 
-This document tracks proposed changes, refinements, and additions to the AM Pixel specification. It is not a replacement for any existing document. It is a staging area. Items here are under discussion and have not been committed to any spec file. Each item includes the rationale, the affected documents, and the proposed implementation.
+**Status:** All changes in this series are **fully implemented in Bible v1.2**. This file remains as the original rationale and review record — not a pending work queue. (Header updated to archive status in v1.6; the previous "Working Document / staging area" header predated implementation and contradicted every other document's description of this series.)
+
+This document tracked proposed changes, refinements, and additions to the AM Pixel specification. Each item includes the rationale, the affected documents, and the proposed implementation.
 
 ---
 

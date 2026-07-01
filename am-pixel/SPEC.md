@@ -1,5 +1,5 @@
 # AM Pixel — Full Technical Specification
-**Absentmind Studio | Version 1.5**
+**Absentmind Studio | Version 1.6**
 
 ---
 
@@ -56,7 +56,13 @@ Sprites are not generated as RGB images. They are generated as sequences of pale
 Diffusion-based models generate in RGB color space with probabilistic sampling. Every generation is a slightly different sample. Over a sprite sheet of 40 frames, subtle color drift accumulates into visible inconsistency. The autoregressive token approach generates the same palette index when conditioned on the same DNA — consistency is structural, not enforced after the fact.
 
 **Conditioning inputs:**
-The model is conditioned on structured DNA specifications at generation time. DNA is not a hint — it collapses the valid token space. The model cannot generate a color that isn't in the character's palette because those token indices don't exist in the conditioned vocabulary.
+The model is conditioned on structured DNA specifications at generation time. DNA is not a hint — it collapses the valid token space. The model cannot generate a color that isn't in the character's palette because the logits of all out-of-palette indices are masked at every sampling step (palette-masked sampling — the exact implementation of vocabulary collapse).
+
+**Palette grounding (CHANGE-032):**
+Palette-index tokens must carry stable color meaning across a corpus where every sprite has its own palette. Two mechanisms, both mandatory:
+
+1. **Canonical ramp-ordered indexing (ingestion).** `data/pipeline/indexer.py` assigns indices canonically: index 0 = transparent; remaining colors clustered into hue ramps, ramps ordered by hue, colors within each ramp ordered dark → light. Index positions therefore carry stable relative semantics (low ramp positions = shadows, high = highlights) corpus-wide.
+2. **Palette color tokens in the conditioning prefix (training and inference, all modes).** Every sequence's conditioning prefix begins with one palette descriptor token per palette slot, embedding the slot's actual color as the sum of three learned embeddings over the SNES 15-bit channels (R5/G5/B5, 32 values each) plus the slot-index embedding. The model always knows what color each index denotes — including for Tier 2 corpus sprites that have no DNA, and for Mode 7 freeform where the palette block is the only conditioning.
 
 **For Mode 7 freeform generation:** Conditioning tokens are omitted entirely. The vocabulary expands to the full 256-color palette. The SNES style constraints and DNA enforcement are suspended. Freeform outputs are PNG only and are never added to the continuity manifest or DNA store.
 
@@ -372,7 +378,7 @@ Standard battle sprites max at 64x64. Large bosses — those spanning multiple t
 
 **Flow:**
 1. Human requests additional sprites: *"Sam needs a surprised reaction — arms up, eyes wide, 2 frames"*
-2. System loads `dna/characters/sam_vendor.json` — does NOT re-derive from sheet image
+2. System loads `dna/characters/sam_vendor_v1.json` (highest `_vN` version) — does NOT re-derive from sheet image
 3. System loads `sheets/sam_vendor_world.json` — identifies empty rows
 4. Generates new frames using DNA as sole reference
 5. Places in empty rows only — never modifies existing sprite pixels
@@ -691,7 +697,8 @@ The evaluation engine is the most important component. Weak evaluation produces 
 - Every sprite evaluated by the automated gate before the human ever sees it
 - Automated gate scores 85 hard-math points — a sprite must pass 85/85 to be presented to the human
 - Human scores the remaining 15 points (Originality and Soul/Visual Hierarchy) in the approval UI
-- Combined score must reach 95/100 for final approval — below 95 means rebuild
+- Combined score must reach 95/100 for final approval
+- **Two distinct failure paths (CHANGE-035):** (1) automated score below 85/85 = full rebuild from silhouette, never shown to the human (Constitution Rule 4); (2) automated 85/85 passed but combined below 95 = human-gate rejection — the sprite is regenerated through the standard adjustment loop with the human's stated reason as conditioning; a from-silhouette rebuild is not forced unless the human requests one
 - Cannot rationalize a flaw as a stylistic choice
 - Cannot compare to its own earlier work — compares only to best work in reference library
 - No partial credit for effort or complexity
@@ -751,7 +758,9 @@ Applies to: all environment tilesets, world map tilesets, animated tile sets, in
 | Atmospheric Consistency | 15 | Set has a unified time-of-day, weather, material feel, and light direction |
 | Completeness | 10 | Set includes all required tile types including transition tiles between surface types |
 | Technical Compliance | 5 | SNES palette constraints, tile dimensions |
-| **PASSING THRESHOLD** | **95/100** | **Below 95 = full rebuild** |
+| **PASSING THRESHOLD** | **95/100** | **Combined — see tier split below** |
+
+**Tier split (CHANGE-033):** Automated gate (85): Seam Integrity 30 + Texture Coherence 20 + Visual Recession 20 (contrast/saturation/detail-density heuristics vs. project character sprites) + Completeness 10 + Technical Compliance 5 — must pass 85/85 before human review. Human gate (15): Atmospheric Consistency 15, awarded in the approval UI. Combined 95+ to pass; failure paths per §8.2.
 
 ---
 
@@ -767,7 +776,9 @@ Applies to: all parallax background layer sets.
 | Character Contrast | 15 | Background recedes sufficiently that player and enemy sprites read clearly in front of it |
 | Emotional Tone | 10 | Does the background communicate the correct feeling for its context |
 | Technical Compliance | 5 | Layer dimensions, SNES palette constraints |
-| **PASSING THRESHOLD** | **95/100** | **Below 95 = full rebuild** |
+| **PASSING THRESHOLD** | **95/100** | **Combined — see tier split below** |
+
+**Tier split (CHANGE-033):** Automated gate (85): Layer Seaming 25 + Layer Depth Differentiation 25 + Character Contrast 15 + Atmospheric Cohesion measurable component (palette/light-direction consistency) 15 + Technical Compliance 5 — must pass 85/85 before human review. Human gate (15): Emotional Tone 10 + Atmospheric Cohesion feel component 5, awarded in the approval UI. Combined 95+ to pass; failure paths per §8.2.
 
 ### 8.4 Pixel-Diff Tooling
 
@@ -955,7 +966,7 @@ The web UI skeleton (working chat panel + image preview + approve/reject control
   1. NVIDIA GPU → CUDA (fastest; preferred for training)
   2. AMD GPU → ROCm (PyTorch-supported; near-equivalent performance)
   3. Apple Silicon → MPS — Metal Performance Shaders (PyTorch M1/M2/M3 support)
-  4. Other GPU → OpenCL via PyTorch extensions
+  4. Intel GPU → XPU (`torch.xpu`, PyTorch 2.4+) — (CHANGE-036: replaces "OpenCL via PyTorch extensions"; PyTorch has no supported OpenCL backend)
   5. No GPU → CPU (inference is usable at **1–10 tokens/sec**; training at Phase 4 corpus scale is **measured in months** on CPU — **cloud GPU is required** for CPU-only machines; see ROADMAP Phase 4 Hardware Reality Check for tier estimates)
   - Cloud GPU rental (RunPod, Vast.ai, Lambda Labs) **required** for Phase 4 training on CPU-only hardware; budget and timing per ROADMAP
   - All device references in code route through the detection utility — no hardcoded `"cuda"` strings anywhere
@@ -975,9 +986,13 @@ The web UI skeleton (working chat panel + image preview + approve/reject control
 
 **This manifest is a legal shield.** If AM Pixel is ever challenged on copyright grounds, the manifest is the evidence that the model was trained exclusively on clean, permissively licensed material. Deleting training data does not retroactively legalize training — it eliminates the defense. See CHANGE-023 for the full legal rationale.
 
-**Acceptable licenses:** CC0, CC-BY (any version), CC-BY-SA (note share-alike obligations), commissioned work-for-hire (copyright explicitly transferred), procedurally generated (post-MVP fine-tuning only). Not acceptable: CC-BY-NC (AM Pixel has commercial tiers), CC-BY-ND (training creates derivatives), unknown license.
+**Acceptable licenses:** CC0, CC-BY (any version — attribution recorded in the manifest), commissioned work-for-hire (copyright explicitly transferred), procedurally generated (post-MVP fine-tuning only). Not acceptable: CC-BY-NC (AM Pixel has commercial tiers), CC-BY-ND (training creates derivatives), unknown license. **CC-BY-SA: ON HOLD pending qualified legal review (CHANGE-038)** — by this section's own reasoning (training creates derivatives), share-alike obligations may attach to model weights/outputs, which conflicts with §12.3 commercial tiers; no CC-BY-SA material may be ingested until a written legal opinion is recorded in `data/scraper/sources.md`.
+
+**Tier 0 — validation corpus (CHANGE-037):** Procedurally generated sprites used exclusively to smoke-test the data pipeline, training loop, and evaluation stack. Recorded in the manifest with `"tier": 0, "license": "synthetic-validation"`. Excluded from corpus statistics and all pass-rate metrics. Never present in a production training run's data mix; validation training runs must be explicitly flagged. Tier 0 does not violate the synthetic-training-data ban (OPENCLAW_PROMPT — Training Data Approach), which exists to prevent quality circularity in the production model, not to prevent testing the machinery.
 
 A sprite without a manifest entry does not get trained on. No exceptions.
+
+**Write-safety (CHANGE-034):** All manifest writes route through `data/pipeline/provenance.py`: every entry is appended to `data/TRAINING_PROVENANCE_MANIFEST.jsonl` (append-only journal, crash-safe) before the canonical JSON array is atomically rewritten (temp file + `os.replace`). On divergence, the journal is authoritative and the array is rebuilt from it.
 
 ---
 
@@ -992,11 +1007,21 @@ A stub `model/architecture/COMPONENT_COMPOSITING_NOTES.md` is initialized in Pha
 
 ---
 
-*AM Pixel Specification v1.5 | Absentmind Studio*
+*AM Pixel Specification v1.6 | Absentmind Studio*
 
 ---
 
 ## Changelog
+
+### v1.6 — 2026-07-01
+- **CHANGE-032:** §3.1 — Palette grounding: canonical ramp-ordered indexing + palette color tokens (15-bit channel embeddings) in every conditioning prefix. Closes the cross-corpus token-semantics gap found in comprehensive review. Vocabulary-collapse wording corrected to logit masking.
+- **CHANGE-033:** §8.3 — Rubrics B and C given automated-85/human-15 tier splits mirroring Rubric A; Constitution Rule 1 now applies to all three rubrics.
+- **CHANGE-034:** §15 — Provenance write-safety: JSONL journal + atomic array rewrite via `data/pipeline/provenance.py`.
+- **CHANGE-035:** §8.2 — Two failure paths defined (automated <85/85 = silhouette rebuild; combined <95 with automated pass = human-gate rejection via adjustment loop).
+- **CHANGE-036:** §14 — Detection tier 4 corrected: OpenCL (unsupported by PyTorch) → Intel XPU.
+- **CHANGE-037:** §15 — Tier 0 synthetic validation corpus defined for pipeline smoke tests; never production training data.
+- **CHANGE-038:** §15 — CC-BY-SA moved to on-hold-pending-legal-review; internal contradiction with §12.3 commercial tiers resolved.
+- §5.2 — Stale DNA filename example corrected to versioned form (`sam_vendor_v1.json`).
 
 ### v1.5 — 2026-04-21
 - **CHANGE-025–031, REFINEMENT-025A:** CONSTITUTION cross-refs; compliance layer in §3.3; DNA rollback procedure + cost warning (§4.3); versioned DNA filenames (§4.4); Continuous Training Protocol — re-anchor, decision log catch-up, failure cluster / escalation (§9.3); CPU training reality + cloud GPU (§14).

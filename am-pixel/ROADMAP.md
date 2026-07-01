@@ -1,5 +1,5 @@
 # AM Pixel — Execution Roadmap
-**Absentmind Studio | Version 1.5**
+**Absentmind Studio | Version 1.6**
 
 ---
 
@@ -34,7 +34,7 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 
 ### Tasks
 - [ ] Run hardware detection via `model/hardware/detector.py` — detect available GPU/backend, log result to `logs/hardware.log`. Proceed on ANY hardware tier. Do NOT halt if CUDA is unavailable.
-  - Detection hierarchy: NVIDIA→CUDA, AMD→ROCm, Apple Silicon→MPS, other GPU→OpenCL, no GPU→CPU
+  - Detection hierarchy: NVIDIA→CUDA, AMD→ROCm, Apple Silicon→MPS, Intel GPU→XPU (CHANGE-036), no GPU→CPU
   - Log: GPU model, VRAM, backend selected, baseline inference speed (tokens/sec on a 16×16 test sprite)
 - [ ] Verify PyTorch installation functional on detected backend
 - [ ] Initialize full folder structure per `FOLDER_STRUCTURE.md`
@@ -49,7 +49,7 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 - [ ] Initialize `data/golden/` directory and `data/golden/CONTRIBUTORS.md` placeholder
 - [ ] Audit all training and inference scripts — confirm zero hardcoded `"cuda"` strings; all device references must route through `model/hardware/detector.py`
 - [ ] Create `pipeline/modes/mode7_freeform.py` stub with documented interface
-- [ ] Initialize `ui/` directory — build working web UI skeleton: chat panel, 1×/4× image preview, approve/reject/adjust controls, project tabs, freeform tab. Must be functional before Phase 5.
+- [ ] Initialize `ui/` directory — build working web UI skeleton: chat panel, 1×/4× image preview, approve/reject/adjust controls, project tabs, freeform tab. The skeleton must be functional at the Phase 0 gate (below); full end-to-end approval-workflow validation is a Phase 5 gate. (Wording aligned v1.6 — previously contradicted the Phase 0 completion gate.)
 - [ ] Initialize all log placeholder files in `logs/` per the canonical list in `FOLDER_STRUCTURE.md` — that document is the authoritative checklist for this step, not this bullet. Do not use this bullet as a complete list.
 - [ ] Add `am-pixel/CONSTITUTION.md` — nine non-negotiable rules; read first every session (CHANGE-025)
 - [ ] Add `logs/session_log.md` and `logs/decision_log.md` with schema headers (CHANGE-026, CHANGE-027)
@@ -463,11 +463,14 @@ Do not silently fail. Do not work around a fundamental problem without documenti
 
 ---
 
-*AM Pixel Execution Roadmap v1.5 | Absentmind Studio*
+*AM Pixel Execution Roadmap v1.6 | Absentmind Studio*
 
 ---
 
 ## Changelog
+
+### v1.6 — 2026-07-01
+- **Series 004 (post-review):** Phase 0 web-UI task wording aligned with the Phase 0 completion gate (CHANGE-035 session). Detection hierarchy tier corrected OpenCL→XPU (CHANGE-036). See BIBLE_CHANGELOG v1.6.
 
 ### v1.5 — 2026-04-21
 - **Series 003 (CHANGE-025–031):** Phase 0 expanded — CONSTITUTION.md, session_log, decision_log, compliance.py + tests, pre-commit hook, emergency halt test, Hardware Reality Check logging. Phase 4 — Hardware Reality table before tasks (CHANGE-030). Phase 7 — mode docstrings + compliance integration gates. Phase 8 — failure cluster analysis + three-cycle escalation (CHANGE-031).

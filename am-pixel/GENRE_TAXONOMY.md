@@ -1,5 +1,5 @@
 # AM Pixel — Genre Taxonomy
-**Absentmind Studio | Version 1.5**
+**Absentmind Studio | Version 1.6**
 
 ---
 
@@ -32,7 +32,7 @@ This definition applies every time the 99/100 threshold is mentioned in this doc
 Each genre within a tier shares significant asset overlap with others in the same tier. Training on one genre in a tier accelerates training on adjacent genres because the underlying pixel art principles — proportion, palette construction, environment design — transfer heavily.
 
 **Advancement rule:**
-In a validation batch of 100 generated sprites, at least 99 individual sprites must each independently score 95 or above on the evaluation rubric — without requiring a rebuild — before the system advances to the next genre. This batch is drawn evenly across all asset types for the genre (characters, enemies, tilesets, UI).
+In a validation batch of 100 generated sprites, at least 99 individual sprites must each independently score 95 or above on the evaluation rubric before the system advances to the next genre. The batch is generated fresh — no sprite in the batch may be a rebuilt retry of another batch member (rebuilds that occurred during prior production work do not disqualify; this aligns with ROADMAP Phase 8 semantics — v1.6). The batch is drawn evenly across all asset types for the genre (characters, enemies, tilesets, UI).
 
 ---
 
@@ -179,11 +179,14 @@ Each genre is considered mastered when:
 
 ---
 
-*AM Pixel Genre Taxonomy v1.5 | Absentmind Studio*
+*AM Pixel Genre Taxonomy v1.6 | Absentmind Studio*
 
 ---
 
 ## Changelog
+
+### v1.6 — 2026-07-01
+- Advancement rule "without requiring a rebuild" qualifier clarified and aligned with ROADMAP Phase 8 (fresh batch; prior production rebuilds do not disqualify). Version synchronized to Bible v1.6.
 
 ### v1.5 — 2026-04-21
 - Bible **v1.5**: synchronized with all other Bible documents (PROPOSED_CHANGES_003 / Series 003 — no taxonomy content delta).

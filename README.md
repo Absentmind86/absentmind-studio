@@ -75,11 +75,14 @@ absentmind-studio/
 
 ## Status
 
-AM Pixel Bible documents are at **v1.5** (`CONSTITUTION`, `SPEC`, `ROADMAP`, `FOLDER_STRUCTURE`, `OPENCLAW_PROMPT`, `GENRE_TAXONOMY`, `am-pixel/README.md`). **PROPOSED_CHANGES_001** and **Series 002** are merged into the Bible (archives retained). **PROPOSED_CHANGES_003** (drift prevention, compliance gates, session logs) is merged into v1.5; the file remains as a proposal archive. OpenClaw should begin from `am-pixel/CONSTITUTION.md`, then `am-pixel/OPENCLAW_PROMPT.md`. This remains a living document set.
+AM Pixel Bible documents are at **v1.6** (`CONSTITUTION`, `SPEC`, `ROADMAP`, `FOLDER_STRUCTURE`, `OPENCLAW_PROMPT`, `GENRE_TAXONOMY`, `am-pixel/README.md`). Proposal Series **001–004** are merged into the Bible (archives retained). **Series 004** (2026-07-01) implements the post-review alignment: palette grounding, Rubric B/C tier splits, provenance write-safety, and licensing fixes — and marks the start of real implementation: the evaluation tool suite, data pipeline, model architecture, training/inference stack, and web UI skeleton are now working code with tests, proven end-to-end on a Tier 0 validation corpus. OpenClaw should begin from `am-pixel/CONSTITUTION.md`, then `am-pixel/OPENCLAW_PROMPT.md`. This remains a living document set.
 
 ---
 
 ## Changelog
+
+### v1.6 — 2026-07-01
+- Bible **v1.6** (Series 004, post-comprehensive-review). Stale duplicate `ROOT_README.md` removed — this file is the sole umbrella document. Implementation session: tools, data pipeline, model, training, inference, and web UI moved from Phase 0 stubs to working, tested code; end-to-end proof-of-life on Tier 0 validation corpus.
 
 ### v1.5 — 2026-04-21
 - Bible **v1.5**: Series 003 — CONSTITUTION.md, compliance tooling, session/decision logs, Startup Protocol (Rule 11), hardware reality table, DNA rollback procedure, Phase 8 failure-cluster protocol.

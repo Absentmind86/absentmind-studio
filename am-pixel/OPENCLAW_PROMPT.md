@@ -1,5 +1,5 @@
 # AM Pixel — OpenClaw Execution Prompt
-**Absentmind Studio | Version 1.5**
+**Absentmind Studio | Version 1.6**
 
 ---
 
@@ -124,7 +124,7 @@ Your first Phase 0 action is to build and run `model/hardware/detector.py`, whic
 1. NVIDIA GPU → CUDA (fastest; preferred for training)
 2. AMD GPU → ROCm (PyTorch-supported; near-equivalent performance)
 3. Apple Silicon → MPS — Metal Performance Shaders
-4. Other GPU → OpenCL via PyTorch extensions
+4. Intel GPU → XPU (`torch.xpu`, PyTorch 2.4+) — CHANGE-036
 5. No GPU → CPU (inference is usable; training is slow — plan accordingly)
 
 All device references throughout the codebase must route through this utility. Audit every script for hardcoded `"cuda"` strings — there must be zero. This audit is a Phase 0 gate criterion.
@@ -167,11 +167,14 @@ The product you are building does not exist anywhere in the world. You are build
 
 ---
 
-*AM Pixel OpenClaw Prompt v1.5 | Absentmind Studio*
+*AM Pixel OpenClaw Prompt v1.6 | Absentmind Studio*
 
 ---
 
 ## Changelog
+
+### v1.6 — 2026-07-01
+- **CHANGE-036:** Hardware context tier 4 corrected OpenCL→XPU (PyTorch has no supported OpenCL backend). Version synchronized to Bible v1.6.
 
 ### v1.5 — 2026-04-21
 - **CHANGE-025:** CONSTITUTION.md is first required read; forced confirmation references nine Constitution rules and 85/85 + combined 95 threshold.
