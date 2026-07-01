@@ -36,18 +36,21 @@ def verify_lock(
     if dna_diff_check is not None:
         return dna_diff_check(dna_path, master_sprite_path)
 
-    # Default: defer to dna_diff when implemented
+    # v1.6 fix: dna_diff lives in am-pixel/tools/ — the previous bare `import dna_diff`
+    # with am-pixel/ on sys.path could never resolve, so verification silently passed.
     if str(_AM_PIXEL) not in sys.path:
         sys.path.insert(0, str(_AM_PIXEL))
     try:
-        import dna_diff  # noqa: WPS433
-
-        if hasattr(dna_diff, "verify_dna_matches_sprite"):
-            return dna_diff.verify_dna_matches_sprite(dna_path, master_sprite_path)
-    except (ImportError, NotImplementedError):
-        pass
-    # Phase 0: no pixel pipeline — pass if files exist and JSON parses
-    return True, "Stub verification — dna_diff.verify_dna_matches_sprite not yet implemented"
+        from tools import dna_diff  # noqa: WPS433
+    except ImportError:
+        try:
+            sys.path.insert(0, str(_AM_PIXEL / "tools"))
+            import dna_diff  # noqa: WPS433
+        except ImportError:
+            return False, "dna_diff module not importable — verification cannot run"
+    if hasattr(dna_diff, "verify_dna_matches_sprite"):
+        return dna_diff.verify_dna_matches_sprite(dna_path, master_sprite_path)
+    return False, "dna_diff.verify_dna_matches_sprite not implemented — verification cannot pass"
 
 
 def rollback_dna_file(dna_path: Path, reason: str, generation_log: Path | None = None) -> None:

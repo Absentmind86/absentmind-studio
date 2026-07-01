@@ -39,7 +39,7 @@ def score_automated_with_evidence(
     )
     out: AutomatedScoreResult = {
         "automated_score": total,
-        "evidence_complete": evidence_complete and total >= 70,
+        "evidence_complete": evidence_complete,
         "categories": category_results,
     }
     if total >= 70 and not evidence_complete:

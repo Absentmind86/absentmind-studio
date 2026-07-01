@@ -16,17 +16,24 @@ _AM_PIXEL = Path(__file__).resolve().parent.parent
 REPO_ROOT = _AM_PIXEL.parent
 
 
-def _emergency_halt_path() -> Path:
-    return REPO_ROOT / "EMERGENCY_HALT"
+def _emergency_halt_path(repo_root: Path | None = None) -> Path:
+    return (repo_root or REPO_ROOT) / "EMERGENCY_HALT"
 
 
-def check_emergency_halt() -> None:
+def is_halted(repo_root: Path | None = None) -> bool:
+    """Non-exiting halt check for long-lived processes (UI server, inference API)."""
+    return _emergency_halt_path(repo_root).is_file()
+
+
+def check_emergency_halt(repo_root: Path | None = None) -> None:
     """
     Call at the entry point of every gate function.
-    If `EMERGENCY_HALT` exists in repo root, print its contents and exit.
+    If `EMERGENCY_HALT` exists in repo root, print its contents and exit the process
+    (SystemExit(2)) — intentional for CLI/pipeline contexts. Server contexts should
+    call `is_halted()` and refuse the request instead of exiting.
     The agent must never delete or modify EMERGENCY_HALT; only the human removes it.
     """
-    path = _emergency_halt_path()
+    path = _emergency_halt_path(repo_root)
     if path.is_file():
         reason = path.read_text(encoding="utf-8", errors="replace")
         print("===== EMERGENCY HALT =====", file=sys.stderr)
@@ -78,8 +85,7 @@ def training_run_gate(
     Required before any training run begins.
     Returns False if any requirement is unmet.
     """
-    check_emergency_halt()
-    root = repo_root or REPO_ROOT
+    check_emergency_halt(repo_root)
     impl = implementation_notes_path or (_AM_PIXEL / "model" / "architecture" / "IMPLEMENTATION_NOTES.md")
     if not impl.is_file():
         return False
@@ -94,8 +100,6 @@ def training_run_gate(
     except json.JSONDecodeError:
         return False
     if not isinstance(data, list) or len(data) == 0:
-        return False
-    if _emergency_halt_path().is_file():
         return False
     return True
 
