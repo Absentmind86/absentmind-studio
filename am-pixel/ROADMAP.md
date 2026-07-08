@@ -32,6 +32,13 @@ Every time this document says "99/100 threshold" it means this batch pass rate. 
 ## Phase 0 — System Initialization
 *Initialize environment, verify hardware, establish project structure*
 
+> **Status (2026-07-01):** Substantially complete — see `logs/phase_gates.md` Phase 0 for
+> the per-criterion evidence record (the authoritative completion ledger per Rule 2).
+> Open items: live root-level EMERGENCY_HALT drill (human-only), 100GB disk verification
+> (this build environment has less; verify on the production machine). All tooling is
+> implemented and tested, hardware detection logged, web UI live, proof-of-life training
+> run completed on the Tier 0 validation corpus (CHANGE-037).
+
 ### Tasks
 - [ ] Run hardware detection via `model/hardware/detector.py` — detect available GPU/backend, log result to `logs/hardware.log`. Proceed on ANY hardware tier. Do NOT halt if CUDA is unavailable.
   - Detection hierarchy: NVIDIA→CUDA, AMD→ROCm, Apple Silicon→MPS, Intel GPU→XPU (CHANGE-036), no GPU→CPU

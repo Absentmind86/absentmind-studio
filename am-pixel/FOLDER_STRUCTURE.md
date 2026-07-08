@@ -77,6 +77,8 @@ am-pixel/
 │   │   ├── validator.py               ← SNES palette compliance validation — checks for provenance entry before passing sprite
 │   │   ├── metadata.py                ← Metadata tagging for training pairs
 │   │   ├── provenance.py              ← Manifest write-safety: JSONL journal + atomic array rewrite (CHANGE-034)
+│   │   ├── sheet_cutter.py            ← Pixel-perfect sheet cutting: grid inference, anti-bounce alignment, ghost-overlay proofs
+│   │   ├── validation_corpus.py       ← Tier 0 corpus builder (CHANGE-037)
 │   │   └── splitter.py                ← Train/validation split
 │   ├── golden/                        ← Tier 1 — manually curated Golden Dataset (3,000–5,000 sprites, human-verified)
 │   │   ├── CONTRIBUTORS.md            ← Human record of Golden Dataset contributors: handle, anonymity preference, accepted sprites, tier
@@ -93,6 +95,8 @@ am-pixel/
 │   │       └── .gitkeep
 │   ├── validation_corpus/             ← Tier 0 synthetic smoke-test corpus (CHANGE-037) — never production training data
 │   │   └── .gitkeep                   ← built by data/pipeline/validation_corpus.py (deterministic, provenance-first)
+│   ├── incoming/                      ← Quarantine drop-off for raw human-supplied sheets + SOURCES.csv (see its README; nothing trains without provenance)
+│   │   └── README.md
 │   ├── TRAINING_PROVENANCE_MANIFEST.json  ← IMMUTABLE LEGAL LEDGER — initialized as [] in Phase 0, never deleted. Every training sprite logged with source, license, pHash, tier. (CHANGE-023)
 │   └── corpus_stats.md                ← Corpus statistics log — reports Tier 1 and Tier 2 separately
 │

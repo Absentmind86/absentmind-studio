@@ -48,3 +48,13 @@ training/inference stacks, and the web UI. A Tier 0 (synthetic, never-production
 validation corpus of 300 sprites was built with provenance-first writes and a tier-0-only
 gated training run executed on CPU as proof-of-life. Production training remains gated on
 human review of IMPLEMENTATION_NOTES (Rule 6) — PHASE4_ARCHITECTURE_REVIEW stays PENDING.
+
+### Addendum — 2026-07-01 session results
+
+Validation training run completed: val_loss 2.50 → 0.39 over 700 CPU steps (22 min),
+88% held-out token accuracy. Sample batch with held-out palettes: 5/8 passed the 85/85
+automated gate (mean 77.5/85); 3 failures were genuine generation artifacts correctly
+caught by the evaluation engine. Zero sprites are APPROVED — approval requires the
+human 15 points (combined 95). Context for all gate decisions this session: Fable 5
+availability window closes 2026-07-07; human delegated human-in-the-loop authority for
+procedural gates for this window (see decision_log 2026-07-01 EscalationJudgment).
